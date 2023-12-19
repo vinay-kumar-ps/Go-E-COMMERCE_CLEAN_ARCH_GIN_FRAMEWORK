@@ -2,4 +2,8 @@
 
  type User struct{
 	
- }
+ 
+}
+type Address struct{
+	
+}

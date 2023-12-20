@@ -11,5 +11,7 @@ type User struct {
 	Phone string `gorm:"unique" json:"phone"`
 	Permission bool `gorm:"default:true" json:"permission"`
 }
+// Address represnts the address of a user
 type Address struct {
+	ID uint `json:"id " gorm:"unique;not null"` 
 }

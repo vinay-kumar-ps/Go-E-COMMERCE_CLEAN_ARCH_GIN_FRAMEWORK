@@ -60,7 +60,7 @@ type SalesReport struct{
 BestSellers []string
 }
 
-type productReport struct{
+type ProductReport struct{
 	InventoryID int
 	Quantity int
 }

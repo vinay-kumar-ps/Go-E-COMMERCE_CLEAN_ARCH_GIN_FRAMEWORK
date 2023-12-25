@@ -12,7 +12,7 @@ type AdminDetailsResponse struct {
 	Email string `json:"email"`
 }
 
-type TokenAdmin struct {
+type AdminToken struct {
 	Username string
 	Token    string
 }

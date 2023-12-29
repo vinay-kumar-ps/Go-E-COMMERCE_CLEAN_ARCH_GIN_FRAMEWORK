@@ -76,11 +76,14 @@ func (ir *inventoryRepository) UpdateInventory(pid int,invData models.UpdateInve
 	if  ir.DB==nil{
 		return models.Inventory{},errors.New("databse connection failed while update inventory")
 	}
+
+
 	if invData.CategoryID !=0 {
 		if err := ir.DB.Exec("UPDATE inventories SET category_id=?,WHERE id=?",invData.CategoryID,pid).Error;err !=nil {
 
         return models.Inventory{},err
 		}
+
 
 	}
 
@@ -92,6 +95,7 @@ if invData.ProductName !="" && invData.ProductName!= "string" {
 
 	}
 
+
 	if invData.Description !="" && invData.Description!= "string" {
 		if err := ir.DB.Exec("UPDATE inventories SET description=?,WHERE id=?",invData.Description,pid).Error; err!=nil {
 
@@ -99,5 +103,14 @@ if invData.ProductName !="" && invData.ProductName!= "string" {
 		}
 
 	}
+	
 
+	//retrive the updates
+	 var updatedInventory models.Inventory
+	 err := ir.DB.Raw("SELECT * FROM inventories WHERE id =?",pid).Scan(&updatedInventory).Error
+     if err!=nil{
+		return models.Inventory{},err
+	 }
+
+     return updatedInventory,nil
 }

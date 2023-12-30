@@ -4,6 +4,7 @@ import (
 	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -105,6 +106,22 @@ if invData.ProductName !="" && invData.ProductName!= "string" {
 	}
 	
 
+   if invData.Stock !=0 {
+	if err := ir.DB.Exec("UPDATE inventories SET stock =? WHERE id =?",invData.Stock,pid).Error;err!=nil{
+
+		return models.Inventory{},err
+	}
+
+ 
+}
+
+if invData.Price !=0 {
+	if err := ir.DB.Exec("UPDATE inventories SET price =? WHERE id=?",invData.Price.pid).Error;err!=nil{
+
+		return models.Inventory{},err
+	}
+}
+
 	//retrive the updates
 	 var updatedInventory models.Inventory
 	 err := ir.DB.Raw("SELECT * FROM inventories WHERE id =?",pid).Scan(&updatedInventory).Error
@@ -114,3 +131,20 @@ if invData.ProductName !="" && invData.ProductName!= "string" {
 
      return updatedInventory,nil
 }
+
+func(ir *inventoryRepository) DeleteInventory(inventoryId string)error{
+	id,err := strconv.Atoi(inventoryId)
+
+	if err!= nil{
+		return errors.New("string to int conversion failed")
+	}
+
+	result :=ir.DB.Exec("DELETE FROM inventories WHERE id =?",id)
+
+	if result.RowsAffected <1 {
+		return errors.New("no records exists with this id")
+	}
+	return nil
+
+}
+func

@@ -147,7 +147,7 @@ func(ir *inventoryRepository) DeleteInventory(inventoryId string)error{
 	return nil
 
 }
-func (ir *inventoryRepository) showIndividualproducts (id string) (models.Inventory,error){
+func (ir *inventoryRepository) ShowIndividualproducts (id string) (models.Inventory,error){
 	pid ,err := strconv.Atoi(id)
 	if err != nil{
 		return models.Inventory{},errors.New("string to int conversion failed")
@@ -158,9 +158,46 @@ func (ir *inventoryRepository) showIndividualproducts (id string) (models.Invent
 
 	err =ir.DB.Raw(`
 	SElECT FROM inventories 
-	WHERE inventories.id=?
+	WHERE Inventories.id=?
 	`,pid).Scan (&product).Error
    if err!=nil{
-	return modesl.inventory{},errors.New("error occured while showing indivudaul product")
+	return models.Inventory{},errors.New("error occured while showing indivudal product")
+
    }
+   return product,err
 }
+
+func (ir *inventoryRepository) ListProducts (page ,limit int) ([]models.InventoryList,error){
+
+	if page ==0{
+		page =1
+	
+	}
+	if limit==0{
+		limit =10
+	}
+	offset := (page -1) * limit
+
+	var productDetails []models.InventoryList
+
+	err := ir.DB.Raw("SELECT inventories.id,inventories.product_name,inventories.description,inventories.stock,inventories.price,inventories.image,categories.category AS category FROM inventories JOIn categories ON inventories.category_id = categories.id LIMIT ? OFFSET ?", limit,offset).Scan(&productDetails).Error
+
+   if err!=nil{
+	return []models.InventoryList{},err
+   }
+   return productDetails,nil
+
+
+}
+func (ir *inventoryRepository) CheckStock(inventory_id int ) (int,error){
+	var stock int
+
+	err :=ir.DB.Raw("SELECT stock FROM inventories WHERE id =? ",inventory_id).Scan(&stock).Error
+  
+	if err!=nil{
+		return 0,err
+	}
+	return stock,nil
+
+}
+f

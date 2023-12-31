@@ -212,3 +212,18 @@ func (ir *inventoryRepository) CheckPrice(inventory_id int) (float64 ,error){
 	 return price,err
 
 	}   
+ func (ir *inventoryRepository)SearchProducts(key string,page,limit int) ([]models.Inventory,error ){
+
+	if page ==0{
+		page =1 
+	} 
+	if limit ==0{
+		limit =10
+	}
+	offset :=(page -1)* limit
+	var ProductSearchResult []models.InventoryList
+	query :=
+
+	SELECT
+
+ }

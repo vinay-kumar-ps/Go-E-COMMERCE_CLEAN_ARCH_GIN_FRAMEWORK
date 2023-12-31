@@ -200,4 +200,15 @@ func (ir *inventoryRepository) CheckStock(inventory_id int ) (int,error){
 	return stock,nil
 
 }
-f
+func (ir *inventoryRepository) CheckPrice(inventory_id int) (float64 ,error){
+	var price float64
+
+	err :=ir .DB.Raw("SELECT price FROM inventories WHERE id = ?,inventory_id").Scan(&price).Error
+   
+     if err != nil{
+
+		return 0,err
+	 }
+	 return price,err
+
+	}   

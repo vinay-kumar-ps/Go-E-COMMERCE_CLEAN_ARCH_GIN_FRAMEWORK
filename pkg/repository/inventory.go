@@ -212,18 +212,44 @@ func (ir *inventoryRepository) CheckPrice(inventory_id int) (float64 ,error){
 	 return price,err
 
 	}   
- func (ir *inventoryRepository)SearchProducts(key string,page,limit int) ([]models.Inventory,error ){
+	func (ir *inventoryRepository) SearchProducts(key string, page, limit int) ([]models.InventoryList, error) {
+		if page == 0 {
+			page = 1
+		}
+		if limit == 0 {
+			limit = 10
+		}
+		offset := (page - 1) * limit
+	
+		var productSearchResult []models.InventoryList
+	
+		query := `
+		
+		SELECT 
+			inventories.id,
+			inventories.product_name,
+			inventories.description,
+			inventories.stock,
+			inventories.price,
+			inventories.image,
+			categories.category AS category
+		FROM
+			inventories
+		JOIN
+			categories
+		ON
+			inventories.category_id = categories.id
+		WHERE
+			product_name ILIKE '%' || ? || '%'
+		OR description ILIKE '%' || ? || '%'
+		LIMIT ? OFFSET ?
+		`
 
-	if page ==0{
-		page =1 
-	} 
-	if limit ==0{
-		limit =10
+		err := ir.DB.Raw(query, key ,limit ,offset).Scan(&productSearchResult).Error
+
+		if err != nil{
+			return []models.InventoryList{},err
+		
+		}
+		return productSearchResult,nil
 	}
-	offset :=(page -1)* limit
-	var ProductSearchResult []models.InventoryList
-	query :=
-
-	SELECT
-
- }

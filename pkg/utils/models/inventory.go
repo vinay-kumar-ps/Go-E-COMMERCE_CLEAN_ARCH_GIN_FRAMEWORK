@@ -1,7 +1,7 @@
 package models
 
 type InventoryResponse struct {
-	productID int
+	ProductID int
 	//stock int
 }
 

@@ -81,3 +81,57 @@ func (orr *orderRepository) GetProductsQuantity()([]domain.ProductReport,error){
 		return cart, nil
 
 }
+func (orr *orderRepository) GetProductNameFromId(id int) (string,error) {
+	var productName  string
+	err := orr.DB.Raw("SELECT product_name FROM inventories WHERE id =?", id).Scan(&productName).Error
+	if err!=nil{
+		return "",err
+	}
+	return productName,nil
+}
+
+func(orr *orderRepository) OrderItems(userid int,order models.Order,total float64) (int,error) {
+
+	var id int 
+
+	query :=`
+	 
+	    INSERT INTO orders
+		(user_id,address_id,price,payment_method_id,ordered_at)
+
+		VALUES 
+		(?,?,?,?,?)
+		RETURNING id
+	`
+	err:= orr.DB.Raw(query,userid,order.AdressId,total,order.PaymentID,time.Now()).Scan(&id).Error
+
+	if err!=nil{
+		return 0,nil
+	}
+	return id,nil
+}
+func (orr *orderRepository)  AddOrderProducts(order_id int ,cart[]models.Getcart)error{
+	query :=`
+	 
+	  INSERT INTO 
+	         order_items
+			 (order_id,inventory_id,quantity,total_price)
+			 VALUES 
+                 (?,?,?,?)
+
+	`
+         for _, cartvals :=range cart {
+			var invId int
+			err := orr.DB.Raw("SELECT id FROM inventories WHERE product_name=?",cartvals.ProductName).Scan(&invId).Error
+
+			if err != nil{
+			return err
+			}
+			if err := orr.DB.Raw(query ,order_id,invId,cartvals.Quantity,cartvals.Total).Error;err !=nil {
+				return err
+
+			}
+		 }
+		 return nil
+
+}

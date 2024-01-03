@@ -157,4 +157,53 @@ func (orr *orderRepository) MarkAsPaid(orderID  int )error{
 	}
 	return nil
 }
-func (orr *orderRepository) AdminOrders ()
+func (orr *orderRepository) AdminOrders (page ,limit int ,status string)([]domain.OrderDetails,error) {
+
+	if page == 0{
+		page = 1
+	}
+	if limit == 0{
+		limit=10
+	}
+	offset := (page -1 )* limit
+
+	var orderDetails []domain.OrderDetails
+
+	query :=`
+	SELECT
+	    orders.id AS order_id,users.name AS username,
+		CONTACT
+		    (addresses.house_name, '',adresses.street,'',adresses.city,'')
+			AS address,payment_methods AS payment_method,orders .price As total
+			FROM 
+			    orders
+
+				JOIn
+				   users
+
+				   ON
+				    users.id=orders.id
+
+					JOIN
+					  adresses
+
+					  ON
+					   orders.adress_id=addresses.id
+
+					   JOIN
+					     payment_methods 
+
+						 ON
+						  orders.payment_method_id=payment_methods_id
+						   
+						  WHERE
+						     order_status=? limit ? offset ?
+
+							
+	`
+	err :=orr.DB.Raw(query,status,limit,offset).Scan(&orderDetails).Error
+	if err != nil{
+		return[]domain.OrderDetails{},err
+	}
+	return orderDetails,nil
+}

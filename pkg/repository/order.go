@@ -206,4 +206,6 @@ func (orr *orderRepository) AdminOrders (page ,limit int ,status string)([]domai
 		return[]domain.OrderDetails{},err
 	}
 	return orderDetails,nil
+
 }
+func

@@ -208,4 +208,4 @@ func (orr *orderRepository) AdminOrders (page ,limit int ,status string)([]domai
 	return orderDetails,nil
 
 }
-func
+func(orr *orderRepository) 

@@ -11,10 +11,10 @@ type OrderRepository interface{
 	GetProductsQuantity()([]domain.ProductReport,error)
 	GetOrdersInRange(startDate,endDate time.Time)([]domain.Order,error)
 	GetProductNameFromId(id int)(string,error)
-	GetCart(userid int)(models.Getcart,error)
+	GetCart(userid int)(models.GetCart,error)
 
 	OrderItems(userid int, order models.Order, total float64) (int, error)
-	AddOrderProducts(order_id int, cart []models.Getcart) error
+	AddOrderProducts(order_id int, cart []models.GetCart) error
 	CancelOrder(orderid int) error
 	EditOrderStatus(status string, id int) error
 	MarkAsPaid(orderID int) error

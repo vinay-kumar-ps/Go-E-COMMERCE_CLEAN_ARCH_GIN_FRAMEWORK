@@ -2,7 +2,7 @@ package models
 
 import "ecommerce/pkg/domain"
 
-type Getcart struct {
+type GetCart struct {
 	ProductName string `json:"product_name"`
 	Category_id int `json:"category_id"`
 	Quantity int `json:"quantity"`
@@ -11,12 +11,12 @@ type Getcart struct {
 }
 type CheckOut struct{
 	Adressess []domain.Address
-	Products []Getcart
+	Products []GetCart
 	PaymentMethod[]domain.PaymentMethod
 	TotalPrice float64
 }
 type Order struct{
-	AdressId int `json:"address_id"`
-	PaymentID int `json:"payment_ID"`
+	AddressId int `json:"address_id"`
+	PaymentId int `json:"payment_ID"`
 
 }

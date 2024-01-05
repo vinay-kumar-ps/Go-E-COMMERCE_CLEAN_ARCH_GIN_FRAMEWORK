@@ -6,14 +6,15 @@ import (
 	"time"
 )
 
-type OrderRepository interface {
-	GetOrders(id, page, limit int) ([]domain.Order, error)
-	GetProductsQuantity() ([]domain.ProductReport, error)
-	GetOrdersInRange(startDate, endDate time.Time) ([]domain.Order, error)
-	GetProductNameFromId(id int) (models.Getcart, error)
+type OrderRepository interface{
+	GetOrders(id,page,limit int)([]domain.Order,error)
+	GetProductsQuantity()([]domain.ProductReport,error)
+	GetOrdersInRange(startDate,endDate time.Time)([]domain.Order,error)
+	GetProductNameFromId(id int)(string,error)
+	GetCart(userid int)(models.GetCart,error)
 
 	OrderItems(userid int, order models.Order, total float64) (int, error)
-	AddOrderProducts(order_id int, cart []models.Getcart) error
+	AddOrderProducts(order_id int, cart []models.GetCart) error
 	CancelOrder(orderid int) error
 	EditOrderStatus(status string, id int) error
 	MarkAsPaid(orderID int) error
@@ -21,9 +22,9 @@ type OrderRepository interface {
 
 	CheckOrder(orderID string, userID int) error
 	GetOrderDetail(orderID string) (domain.Order, error)
-	FindUserIdFromOrderId(orderID int) (int, error)
+	FindUserIdFromOrderID(orderID int) (int, error)
 	FindAmountFromOrderID(orderID int) (float64, error)
 	ReturnOrder(id int) error
-	CheckOrderStatus(OrderID int) (string, error)
+	CheckOrderStatus(orderID int) (string, error)
 	CheckPaymentStatus(orderID int) (string, error)
 }

@@ -223,7 +223,7 @@ func(orr *orderRepository) CheckOrder (orderID string,userID int)  error{
 		chUser := orr.DB.Raw("SELECT user_id FROM orders WHERE order_id=?",orderID).Scan(&checkUser)
 		if err!=nil{
 
-			return chUser
+			return chUser.Error
 		}
 		if userID!=checkUser{
 
@@ -233,3 +233,66 @@ func(orr *orderRepository) CheckOrder (orderID string,userID int)  error{
 		return nil
 
 } 
+func (orr *orderRepository) GetOrderDetails (orderiD string) (domain.Order,error) {
+
+
+	 var  orderDetails domain.Order
+
+	 err := orr.DB.Raw("SELECT * FROM orders WHERE order_id=?",orderiD).Scan(&orderDetails).Error
+
+	 if  err != nil{
+		return domain.Order{},err
+	 }
+	 return orderDetails,nil
+
+}
+
+func (orr *orderRepository) FindAmountOrderID (orderID int ) (float64,error){
+	var amount float64
+	err := orr.DB.Raw("SELECT price FROM orders WHERE orders_id=?",orderID).Scan(&amount).Error
+	 if err !=nil{
+		return 0,err
+	 }
+	 return amount,nil
+}
+
+func (orr *orderRepository) FindUserIdFromOrderID(orderID int) (int,error){
+	 var userId int 
+
+	 err := orr.DB.Raw("SLECT user_id FROM orders HWERE order_id =?",orderID).Scan(&userId).Error
+	  if err != nil{
+
+		return 0,err
+	  }
+	return userId,nil
+}
+
+func(orr *orderRepository) ReturnOrder(id int )error{
+	 err :=orr.DB.Exec("UPDATE orders SET  order_status='RETURNED' WHERE id=?",id).Error
+	
+	 if err!=nil{
+   return err
+	 }
+	 return nil
+}
+
+func (orr *orderRepository) CheckOrderStatus(orderID int ) (string ,error){
+var orderStatus string
+
+err := orr.DB.Raw("SELECT order_status FROM orders WHERE order_id =?",orderID).Scan(&orderStatus).Error
+
+
+if err != nil{
+ return "",err
+}
+return orderStatus,nil
+}
+
+func(orr *orderRepository) CheckPaymentStatus (orderID int) (string ,error){
+	var paymentStatus string
+	err := orr.DB.Raw("SELECT payment_status FROM orders WHERE order_id=?",orderID).Scan(&paymentStatus).Error
+	if err != nil{
+		return "", err
+	}
+	return paymentStatus ,nil
+}

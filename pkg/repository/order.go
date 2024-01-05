@@ -4,6 +4,7 @@ import (
 	"ecommerce/pkg/domain"
 	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -208,4 +209,27 @@ func (orr *orderRepository) AdminOrders (page ,limit int ,status string)([]domai
 	return orderDetails,nil
 
 }
-func(orr *orderRepository) 
+func(orr *orderRepository) CheckOrder (orderID string,userID int)  error{
+
+	var Count  int
+	err :=orr.DB.Raw("SELECT COUNT (*)FROM orders WHERE order_id=?",orderID).Scan(&Count).Error
+	if err!=nil{
+		return err
+	}
+	if Count < 0 {
+		return  errors.New("no such orders exixt")
+	}
+	var checkUser int
+		chUser := orr.DB.Raw("SELECT user_id FROM orders WHERE order_id=?",orderID).Scan(&checkUser)
+		if err!=nil{
+
+			return chUser
+		}
+		if userID!=checkUser{
+
+			return errors.New("no order did by this user")
+
+		}
+		return nil
+
+} 

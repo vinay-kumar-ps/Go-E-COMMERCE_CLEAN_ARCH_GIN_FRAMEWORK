@@ -16,8 +16,8 @@ type orderRepository struct{
 }
 
 //constructor function
-func NewOrderRepository (DB *gorm.DB) interfaces.OfferRepository {
-	return &orderRepository {
+func NewOrderRepository(DB *gorm.DB) interfaces.OrderRepository {
+	return &orderRepository{
 		DB: DB,
 	}
 }

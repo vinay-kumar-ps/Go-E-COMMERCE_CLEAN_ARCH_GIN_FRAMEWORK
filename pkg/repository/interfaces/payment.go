@@ -3,7 +3,7 @@ package interfaces
 import "ecommerce/pkg/domain"
 
 type PaymentRepository interface{
-	AddNewpaymentMethod(paymentMethod string)error
+	AddNewPaymentMethod(paymentMethod string)error
 	RemovePaymentMethod(paymentMethodId int )error
 	GetPaymentMethods()([]domain.PaymentMethod,error)
 	FindUsername(user_id int)(string,error)

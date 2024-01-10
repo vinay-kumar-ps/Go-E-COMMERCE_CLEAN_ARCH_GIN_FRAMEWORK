@@ -10,7 +10,7 @@ type UserRepository interface {
 	UserBlockStatus(email string) (bool, error)
 	FindUserByEmail(user models.UserLogin) (models.UserResponse, error)
 	SignUp(user models.UserDetails) (models.UserResponse, error)
-	AddAdress(id int, address models.AddAdress, result bool) error
+	AddAdress(id int, address models.AddAddress, result bool) error
 	GetAdresses(id int) ([]domain.Address, error)
 	CheckIfFirstAddress(id int) bool
 	GetUserDetails(id int) (models.UserResponse, error)

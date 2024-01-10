@@ -26,7 +26,7 @@ type UserDetails struct {
 	Password        string `json:"password"`
 	ConfirmPassword string `json:"confirm_password"`
 }
-type AddAdress struct {
+type AddAddress struct {
 	Name      string `json:"name" validate:"required"`
 	HouseName string `json:"house_name" validate:"required"`
 	Street    string `json:"street" validate:"required"`
@@ -34,7 +34,7 @@ type AddAdress struct {
 	State     string `json:"state" validate:"required"`
 	Pin       string `json:"pin" validate:"required"`
 }
-type ChangePasswrod struct {
+type ChangePassword struct {
 	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password"`
 	RePassword  string `json:"re_password"`

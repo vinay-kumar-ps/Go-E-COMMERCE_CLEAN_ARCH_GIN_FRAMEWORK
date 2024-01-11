@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"ecommerce/pkg/domain"
 	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
@@ -69,5 +70,105 @@ func (ur *userRepository)SignUp(user  models.UserDetails)(models.UserResponse,er
 	return userResponse,nil
 }
 func (ur *userRepository)AddAddress( id int ,address models.AddAddress,result bool)error{
-	
+ query :=`
+  
+ INSERT INTO addresses (user_id,name,house_name,street,city,state,pin,"default")
+ VALUES($1,$2,$3,$4,$5,$6,$7,8)
+ RETURNING id
+ ` 
+	 err :=ur.DB.Exec(query ,id,address.Name,address.HouseName ,address.Street,address.City,address.State,address.Pin,result).Error
+	 if err !=nil{
+		return errors.New("adding address failed ")
+	 }
+	 return nil
+
+
+	}
+	func( ur *userRepository) CheckIfFirstAddress(id int)bool {
+		var addresscount int
+		err :=ur.DB.Raw("SELECT COUNT (*)FROM addresses WHERE user_id=?",id).Scan(&addresscount).Error
+		if err !=nil{
+			return false
+		}
+		// if addresscount>0 there is already a address
+		return addresscount > 0
+	}
+	func (ur *userRepository)GetAddresses(id int )([]domain.Address,error){
+		var getAddress []domain.Address
+		err := ur.DB.Raw("SELECT *FROM addresses WHERE id?=",id).Scan(&getAddress).Error
+		if err !=nil{
+			return []domain.Address{},errors.New("failed to getting address")
+		}
+		return getAddress,nil
+	}
+
+	func (ur *userRepository) GetUserDetails(id int )(models.UserResponse,error){
+		var userDetails models.UserResponse
+		err := ur.DB.Raw("SELECT *FROM users WHERW id =?",id).Scan(&userDetails).Error
+		if err!=nil{
+			return models.UserResponse{},errors.New("error while getting user details")
+		}
+		return userDetails,nil
+
+	}
+
+func (ur *userRepository) ChangePassword (id int ,passworod string) error{
+	err :=ur.DB.Exec("UPDATE users SET password=? ,WHERE id =?",passworod,id).Error
+	if err !=nil{
+		return errors.New("password changing failed")
+
+	}
+	return nil
+}
+func (ur *userRepository) GetPassword (id int ) (string ,error) {
+	var password string
+	err :=ur.DB.Raw("SELECT password FROM users WHERE id =?",id).Scan(&password).Error
+	if err!=nil{
+		return "",errors.New("password getting failed")
+
+	}
+	return password ,nil
+}
+func(ur *userRepository) FIndFromPhone (phone string) (int ,error) {
+	var userId int 
+	err :=ur.DB.Raw("SELECT id FROM users WHERE phone =?",phone).Scan(&userId).Error
+	if err!=nil{
+		return 0,err
+	}
+	return userId,nil
+}
+func (ur *userRepository) EditName (id int ,name string)error{
+  err :=ur.DB.Exec("UPDATE users SET name =? ,WHERE id =?",name,id).Error
+  if err !=nil{
+	return errors.New("error while editing name")
+
+ 
+}
+return nil
+}
+func (ur *userRepository) EditEmail (id int ,email string)error{
+	if err :=ur.DB.Exec("UPDATE users SET name =?, WHERE id =?",email ,id).Error;err !=nil {
+		return errors.New("errors while editing name")	
+	}
+	return nil
+}
+func (ur *userRepository)EditPhone (id int,phone string)error{
+	if err := ur.DB.Exec("UPDATE users SET phone=? ,WHERE id =?",phone,id) .Error;err!=nil{
+		return errors.New("error while changing phone number")
+
+	}
+	return nil
+}
+func (ur *userRepository)EditUsername (id int,username string)error{
+	if err := ur.DB.Exec("UPDATE users SET username=? ,WHERE id =?",username,id) .Error;err!=nil{
+		return errors.New("error while changing username")
+
+	}
+	return nil
+}
+func (ur *userRepository) RemoveFromCart (id int,inventoryID int) error{
+	if err:=ur.DB.Exec("DELETE FROM line_items WHERE id =? AND inventory_id=?",id,inventoryID).Error;err!=nil{
+		return errors.New("item not removed")
+	}
+	return nil
 }

@@ -172,3 +172,42 @@ func (ur *userRepository) RemoveFromCart (id int,inventoryID int) error{
 	}
 	return nil
 }
+func (ur *userRepository)ClearCart(cartID int )error{
+	if err :=ur.DB.Exec("DELETE FROM line_items WHERE cart_id=?",cartID).Error;err!=nil{
+		 return errors.New("cart not cleared")
+	}
+	return nil
+}
+func (ur *userRepository)UpdateQuantityAdd(id,inv_id  int)error {
+query :=`
+  UPDATE line_items SET quantity SET quantity =quantity+1
+  WHERE cart_id =? AND inventory_id=?
+
+`
+if err := ur.DB.Exec(query,id,inv_id).Error;err!=nil{
+	return errors.New("failed to add quantity")
+}
+return nil
+}
+ func (ur *userRepository)UpdateQuantityLess(id ,inv_id int ) error{
+	query :=`
+	 
+	UPDATE line_items SET quantity =quantity-1
+	WHERE cart_id=? AND inventory_id =?
+
+	`
+	if err := ur.DB.Exec(query,id,inv_id).Error; err !=nil{
+		return errors.New("failed to decrese quantity")
+	}
+	return nil
+ }
+ func(ur *userRepository) FindUserByOrderId (orderId string)(domain.User,error){
+	var userDetails domain.User
+	err := ur.DB.Raw("SELECT users.name,users.email,users.phone FROM users JOIN orders ON orders.user_id=users.id WHERE order_id=?",orderId).Scan(&userDetails).Error
+
+	if err!=nil{
+		return domain.User{},errors.New("user not found with order id")
+	}
+	return userDetails,nil
+ }
+

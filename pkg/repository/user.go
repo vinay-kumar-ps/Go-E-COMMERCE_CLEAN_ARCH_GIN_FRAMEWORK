@@ -6,7 +6,6 @@ import (
 	"ecommerce/pkg/utils/models"
 	"errors"
 
-	"golang.org/x/mod/module"
 	"gorm.io/gorm"
 )
 
@@ -211,3 +210,60 @@ return nil
 	return userDetails,nil
  }
 
+func (ur *userRepository)GetCartID(id int )(int ,error){
+	var cartid int
+	if err := ur.DB.Raw("SELECT id FROM cart_id WHERE user_id=?",id).Scan(&cartid).Error;err!=nil{
+		return 0,errors.New("cart id not found")
+
+	}
+	return cartid,nil
+}
+
+func (ur *userRepository) GetProductsInCart (cart_id,page,limit int )([]int ,error){
+	var cartproducts []int 
+
+	if page==0{
+		page=1 
+	}
+	if limit == 0{
+		limit=10
+	}
+	offset :=(page -1)* limit
+	err := ur.DB.Raw("SELECT inventory_id FROM line_items WHERE cart_id=? ,limit =?.offset =?",cart_id,limit ,offset ).Scan(&cartproducts).Error
+	 if err !=nil{
+		return []int{},err
+	 }
+	 return cartproducts,nil
+}
+func (ur *userRepository) FindProductName (inventory_id int)(string ,error){
+	var productName string
+
+	if err :=ur.DB.Raw("SELECT product_name FROM inventories WHERE id=?",inventory_id).Scan(&productName).Error;err!=nil{
+		return "",errors.New("product name not found")
+
+	}
+	return productName ,nil
+}
+func (ur *userRepository)FindCartQuantity(cart_id ,inventory_id int )(int ,error){
+	var quantity int
+	if err:=ur.DB.Raw("SELECT quantity FROM line_items WHERE cart_id=? AND inventory_id =?",cart_id,inventory_id).Scan(&quantity).Error;err !=nil {
+		return 0,errors.New("quantity not found")
+	}
+	return quantity ,nil
+}
+func (ur *userRepository)FindPrice(inventory_id int)(float64,error){
+	var price float64
+	if err :=ur.DB.Raw("SELECT price FROM inventories WHERE id=?",inventory_id).Scan(&price).Error;err !=nil{
+		return 0,errors.New("price not found")
+	}
+	return price ,nil
+}
+func(ur *userRepository)FidCategory (inventory_id int) (int,error){
+	var categoryId int
+	if err := ur.DB.Raw("SELECT category_id FROM inventories WHERE id=?", inventory_id).Scan(&categoryId).Error; err != nil {
+		return 0, errors.New("category id not found")
+	}
+	return categoryId, nil
+
+	
+}

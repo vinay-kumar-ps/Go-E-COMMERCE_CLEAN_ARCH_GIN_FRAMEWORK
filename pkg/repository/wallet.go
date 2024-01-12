@@ -101,5 +101,12 @@ func (wr *walletRepository) PayFromWallet(userId ,orderId int ,price float64)(fl
 
 		return 0,err
 	}
-	if err
+	if err := wr.DB.Exec("UPDATE orders SET payment_status='PAID' WHERE order_id=?",orderId ).Error;err !=nil{
+		return 0,err
+	}
+	if err := wr.DB.Raw("SELECT amount FROM wallets WHERE user_id=?", userId).Scan(&balanceAfterPay).Error; err != nil {
+		return 0, err
+	}
+	return balanceAfterPay,nil
+
 }

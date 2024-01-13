@@ -19,12 +19,12 @@ func NewWishlistRepository(DB *gorm.DB) interfaces.WishListRepository{
 	}
 }
 func (wlr *wishlistRepository) GetWishListId(user_id int)(int ,error){
-	var wishlistId int
+	var wishlistID int
 	if err :=wlr.DB.Raw("SELECT id FROM wishlist WHERE user_id=?",user_id).Scan(&wishlistId).Error;err!=nil{
 		return 0,errors.New("wishlist id not found")
 
 	}
-	return wishlistId,nil
+	return wishlistID,nil
 }
 func (wlr *walletRepository)GetWishlist(id int) ([]models.GetWishlist,error){
 	var getWishlist []models.GetWishlist
@@ -44,4 +44,5 @@ func (wlr *walletRepository)GetWishlist(id int) ([]models.GetWishlist,error){
 	}
 	return getWishlist,nil
 }
+func ()
 

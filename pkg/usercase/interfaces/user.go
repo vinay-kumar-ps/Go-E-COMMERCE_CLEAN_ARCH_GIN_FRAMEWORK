@@ -22,4 +22,6 @@ type UserUsecase interface{
 	 ClearCart(cartID int)error
 	 UpdateQuantityAdd(id ,inv_id int )error
 	 UpdateQuantityLess(id ,inv_id int )error
+	 
+	 GetWallet(id ,page ,limit int)(models.Wallet,error)
 }

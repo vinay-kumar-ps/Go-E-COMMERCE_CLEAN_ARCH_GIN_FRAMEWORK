@@ -5,11 +5,11 @@ import "errors"
 type InvoiceData struct{
 	Title  string
 	Quantity int 
-	price  int
+	Price  int
    TotalAmount int
 }
 func (d *InvoiceData) CalculateTotalAmount ()int {
-	totalAmount :=d.Quantity *d.price
+	totalAmount :=d.Quantity *d.Price
 	return totalAmount
 }
 
@@ -19,7 +19,7 @@ func (d *InvoiceData) ReturnItemTotalAmount()float64{
 	return converted
 }
 func (d *InvoiceData)ReturnItemPrice()float64{
-	returnPrice :=float64(d.price)/100
+	returnPrice :=float64(d.Price)/100
 	return returnPrice
 }
 func NewInvoiceData(title string,qty int ,price interface{})(*InvoiceData,error){
@@ -39,7 +39,7 @@ func NewInvoiceData(title string,qty int ,price interface{})(*InvoiceData,error)
 	return &InvoiceData{
 		Title: title,
 		Quantity: qty,
-		price: convertedPrice,
+		Price: convertedPrice,
 	},nil
 
 }

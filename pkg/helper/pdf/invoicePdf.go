@@ -221,7 +221,11 @@ func (c *Client) writeInvoice(invoice Invoice) error {
 		err = drawCell(table, c.newPara(fmt.Sprintf("%v", datum.Quantity), regularStyle), cellStyles["centered-highlighted"])
 		if err != nil {
 			return err
-		}
+		} //
+
+		//price or Price
+
+		//
 		err = drawCell(table, c.newPara(fmt.Sprintf("%v", datum.Price), regularStyle), cellStyles["centered-highlighted"])
 		if err != nil {
 			return err

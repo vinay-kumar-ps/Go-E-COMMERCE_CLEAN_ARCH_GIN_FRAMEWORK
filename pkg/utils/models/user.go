@@ -47,6 +47,6 @@ type EditUser struct {
 }
 type UserKey string
 
-func (k UserKey) string() string {
+func (k UserKey) String() string {
 	return string(k)
 }

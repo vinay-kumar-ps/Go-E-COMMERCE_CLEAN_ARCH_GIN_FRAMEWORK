@@ -169,3 +169,4 @@ func AddImageToS3(file *multipart.FileHeader) (string, error) {
 	}
 	return result.Location, nil
 }
+//

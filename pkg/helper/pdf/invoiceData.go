@@ -43,3 +43,4 @@ func NewInvoiceData(title string,qty int ,price interface{})(*InvoiceData,error)
 	},nil
 
 }
+//

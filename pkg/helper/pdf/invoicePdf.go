@@ -269,3 +269,4 @@ func (c *Client) writeInvoice(invoice Invoice) error {
 	}
 	return nil
 }
+//

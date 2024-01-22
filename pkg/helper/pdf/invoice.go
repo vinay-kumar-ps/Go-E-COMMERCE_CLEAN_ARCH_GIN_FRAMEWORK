@@ -22,4 +22,6 @@ func (i *Invoice) CalculateInvoiceTotalAmount() float64 {
 	}
 	totalAmount := float64(invoiceTotalAmount) / 100
 	return totalAmount
-}
+ }
+
+ //

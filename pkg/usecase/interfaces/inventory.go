@@ -6,10 +6,10 @@ import (
 )
 
 type InventoryUsecase interface{
-	AddInventory (inventory models.Inventory,image *multipart.FileHeader)(models.InventoryResponse,error)
-	UpdateInventory (invID int, invDate models.UpdateInventory)(models.Inventory,error)
+	AddInventory(inventory models.Inventory,image *multipart.FileHeader)(models.InventoryResponse,error)
+	UpdateInventory(invID int, invDate models.UpdateInventory)(models.Inventory,error)
 	UpdateImage(invID int ,image *multipart.FileHeader)(models.Inventory,error)
-	DeleteInventory (id string)error
+	DeleteInventory(id string)error
 
 	ShowIndividualProducts(id string) (models.InventoryDetails,error)
 	ListProduts(page int, limit int)([]models.InventoryList,error)

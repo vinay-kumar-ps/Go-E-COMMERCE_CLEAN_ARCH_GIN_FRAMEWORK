@@ -7,10 +7,10 @@ type GetCart struct {
 	Category_id int `json:"category_id"`
 	Quantity int `json:"quantity"`
 	Total float64      `json:"total_price"`
-	 DiscountedPrice float64 `json:"discounted_price"`
+	 DiscountPrice float64 `json:"discounted_price"`
 }
 type CheckOut struct{
-	Adressess []domain.Address
+	Addresses []domain.Address
 	Products []GetCart
 	PaymentMethod[]domain.PaymentMethod
 	TotalPrice float64

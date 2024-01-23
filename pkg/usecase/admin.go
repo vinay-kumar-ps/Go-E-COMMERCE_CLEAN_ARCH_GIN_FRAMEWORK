@@ -29,17 +29,17 @@ func (au *adminUsecase) LoginHandler(adminDetails models.AdminLogin) (models.Adm
 	if err != nil {
 		return models.AdminToken{}, errors.New("admin not found")
 	}
-
-	hash, err := helper.PasswordHashing(adminDetails.Password)
-	if err != nil {
-		return models.AdminToken{}, err
+	
+	hash,err:=helper.PasswordHashing(adminDetails.Password)
+	if err!=nil{
+		return models.AdminToken{},err
 	}
 	// Compare password from database that provided by admin
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(adminDetails.Password))
 	if err != nil {
 		return models.AdminToken{}, err
 	}
-
+	
 	token, err := helper.GenerateAdminToken(adminCompareDetails)
 	if err != nil {
 		return models.AdminToken{}, err
@@ -49,11 +49,11 @@ func (au *adminUsecase) LoginHandler(adminDetails models.AdminLogin) (models.Adm
 		Token:    token,
 	}, nil
 }
+
 func (au *adminUsecase) BlockUser(id string) error {
 	user, err := au.adminRepository.GetUserById(id)
 	if err != nil {
 		return errors.New("user not found")
-
 	}
 	if !user.Permission {
 		return errors.New("already blocked")
@@ -65,7 +65,6 @@ func (au *adminUsecase) BlockUser(id string) error {
 		return err
 	}
 	return nil
-
 }
 
 func (au *adminUsecase) UnblockUser(id string) error {
@@ -83,11 +82,12 @@ func (au *adminUsecase) UnblockUser(id string) error {
 	}
 	return nil
 }
-func (au *adminUsecase) Getusers(page, limit int) ([]models.UserDetailsAtAdmin, error) {
+
+func (au *adminUsecase) GetUsers(page, limit int) ([]models.UserDetailsAtAdmin, error) {
 	users, err := au.adminRepository.GetUsers(page, limit)
 	if err != nil {
 		return []models.UserDetailsAtAdmin{}, errors.New("getting users failed")
-
 	}
 	return users, nil
+
 }

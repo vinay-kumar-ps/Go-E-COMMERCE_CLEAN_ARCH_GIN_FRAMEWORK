@@ -1,2 +1,2 @@
-package usercase
+package usecase
 

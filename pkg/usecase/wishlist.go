@@ -1,1 +1,1 @@
-package usercase
+package usecase

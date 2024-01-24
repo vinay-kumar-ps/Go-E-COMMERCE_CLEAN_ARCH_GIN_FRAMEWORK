@@ -19,7 +19,7 @@ func NewCouponUsecase(couponRepo interfaces.CouponRepository) services.CouponUse
 	}
 }
 
-func (coupU *couponUsecase) Addcoupon(coupon domain.Coupon) error {
+func (coupU *couponUsecase) AddCoupon(coupon domain.Coupon) error {
 	if err := coupU.couponRepo.AddCoupon(coupon); err != nil {
 		return errors.New("coupon adding failed")
 	}

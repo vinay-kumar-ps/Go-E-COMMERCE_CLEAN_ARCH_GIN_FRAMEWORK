@@ -36,5 +36,5 @@ type InventoryDetails struct{
 }
 type ImagesInfo struct{
 	ID int `json:"id"`
-	ImageURL string `json:"imageurl"`
+	Imageurl string `json:"imageurl"`
 }

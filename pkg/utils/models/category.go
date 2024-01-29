@@ -1,6 +1,6 @@
 package models
 
-type setNewname struct {
+type SetNewName struct {
 	Current string `json:"current"`
 	New     string `json:"new"`
 }

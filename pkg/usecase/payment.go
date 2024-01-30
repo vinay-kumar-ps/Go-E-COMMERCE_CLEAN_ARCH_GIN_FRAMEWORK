@@ -3,6 +3,7 @@ package usecase
 import (
 	"ecommerce/pkg/domain"
 	interfaces "ecommerce/pkg/repository/interfaces"
+	 services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
 	"fmt"
@@ -17,7 +18,7 @@ type paymentUsecase struct {
 }
 
 //constructor function
-func NewPaymentUsecase(paymentRepo interfaces.PaymentRepository, useRepo interfaces.UserRepository) services.paymentUsecase {
+func NewPaymentUsecase(paymentRepo interfaces.PaymentRepository, useRepo interfaces.UserRepository) services.PaymentUsecase {
 	return &paymentUsecase{
 		paymentRepo: paymentRepo,
 		userRepo:    useRepo,
@@ -52,13 +53,17 @@ func (payU *paymentUsecase) GetPaymentMethods() ([]domain.PaymentMethod, error) 
 
 func (payU *paymentUsecase) MakePaymentRazorPay(orderID string, userID int) (models.OrderPaymentDetails, error) {
 
+
+var  orderDetails models.OrderPaymentDetails
+
+
 	//Get order id
 	orderId, err := strconv.Atoi(orderID)
 	if err != nil {
 		return models.OrderPaymentDetails{}, err
 	}
-	orderDetails.orderID = orderId
-	orderDetails.userID = userID
+	orderDetails.OrderID = orderId
+	orderDetails.UserID = userID
 
 	//Get username
 	username, err := payU.paymentRepo.FindUsername(userID)
@@ -98,4 +103,29 @@ func (payU *paymentUsecase) MakePaymentRazorPay(orderID string, userID int) (mod
 	fmt.Println("razorpay::100", orderDetails)
 	return orderDetails, nil
 
+}
+
+func(payU *paymentUsecase) VerifyPayment(paymentID string,razorID string , orderID string)error{
+	if err :=payU.paymentRepo.UpdatePaymentDetails(orderID,paymentID,razorID);err !=nil{
+		return err
+
+		//clear cart
+
+		orderIdint,err :=strconv.Atoi(orderID)
+		if err !=nil{
+			return err
+		}
+		userId ,err :=payU.userRepo.FindUserByOrderID(orderIdint)
+		if err !=nil{
+			return err
+		}
+		cartId,err :=payU.userRepo.GetCartID(userId)
+		if err !=nil{
+			return err
+		}
+		if err :=payU.userRepo.ClearCart(cartId);err !=nil{
+
+		}
+		return nil
+	}
 }

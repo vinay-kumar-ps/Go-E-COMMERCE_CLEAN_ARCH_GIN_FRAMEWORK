@@ -108,14 +108,14 @@ var  orderDetails models.OrderPaymentDetails
 func(payU *paymentUsecase) VerifyPayment(paymentID string,razorID string , orderID string)error{
 	if err :=payU.paymentRepo.UpdatePaymentDetails(orderID,paymentID,razorID);err !=nil{
 		return err
-
+	}
 		//clear cart
 
-		orderIdint,err :=strconv.Atoi(orderID)
+		orderIdInt,err :=strconv.Atoi(orderID)
 		if err !=nil{
 			return err
 		}
-		userId ,err :=payU.userRepo.FindUserByOrderID(orderIdint)
+		userId ,err :=payU.userRepo.FindUserByOrderID(orderIdInt)
 		if err !=nil{
 			return err
 		}
@@ -125,7 +125,7 @@ func(payU *paymentUsecase) VerifyPayment(paymentID string,razorID string , order
 		}
 		if err :=payU.userRepo.ClearCart(cartId);err !=nil{
 
-		}
-		return nil
-	}
+         return err
+		}	
+	return nil
 }

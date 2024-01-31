@@ -105,27 +105,28 @@ var  orderDetails models.OrderPaymentDetails
 
 }
 
-func(payU *paymentUsecase) VerifyPayment(paymentID string,razorID string , orderID string)error{
-	if err :=payU.paymentRepo.UpdatePaymentDetails(orderID,paymentID,razorID);err !=nil{
+func (payU *paymentUsecase) VerifyPayment(paymentID string, razorID string, orderID string) error {
+
+	if err := payU.paymentRepo.UpdatePaymentDetails(orderID, paymentID, razorID); err != nil {
 		return err
 	}
-		//clear cart
 
-		orderIdInt,err :=strconv.Atoi(orderID)
-		if err !=nil{
-			return err
-		}
-		userId ,err :=payU.userRepo.FindUserByOrderID(orderIdInt)
-		if err !=nil{
-			return err
-		}
-		cartId,err :=payU.userRepo.GetCartID(userId)
-		if err !=nil{
-			return err
-		}
-		if err :=payU.userRepo.ClearCart(cartId);err !=nil{
+	// Clear cart
+	orderIdInt, err := strconv.Atoi(orderID)
+	if err != nil {
+		return err
+	}
 
-         return err
-		}	
+	userId, err := payU.userRepo.FindUserIDByOrderID(orderIdInt)
+	if err != nil {
+		return err
+	}
+	cartId, err := payU.userRepo.GetCartID(userId)
+	if err != nil {
+		return err
+	}
+	if err := payU.userRepo.ClearCart(cartId); err != nil {
+		return err
+	}
 	return nil
 }

@@ -140,3 +140,58 @@ func(usrU *userUsecase) GetCartID(userID int)(int,error){
 	}
 	return cartId,nil
 }
+func(usrU *userUsecase) EditUser(id int ,userData models.EditUser)error{
+
+	if userData.Name!= "" && userData.Name !="string"{
+		err :=usrU.userRepo.EditName(id,userData.Name)
+		if err !=nil{
+			return err
+		}
+	}
+	if userData.Email!= "" &&userData.Email!="string"{
+		err :=usrU.userRepo.EditEmail(id,userData.Email)
+		if err != nil{
+			return err
+		}
+	}
+	if userData.Phone != "" && userData.Phone != "string"{
+		err := usrU.userRepo.EditPhone(id,userData.Phone)
+		if err !=nil{
+			return err
+		}
+	}
+	if userData.Username!= "" && userData.Username!= "string"{
+		err := usrU.userRepo.EditUsername(id,userData.Username)
+		if err !=nil{
+			return err
+		}
+	}
+	return nil
+}
+func (usrU *userUsecase)GetCart(id ,page,limit int) ([]models.GetCart,error)  {
+	//find cart id
+	cartId,err :=usrU.GetCartID(id)
+	if err !=nil{
+		return []models.GetCart{},errors.New("could't find cart id")
+	}
+	//find products inside cart
+	products,err :=usrU.userRepo.GetProductsInCart(cartId,page,limit)
+	if err !=nil{
+		return []models.GetCart{},errors.New("couldn't find products in cart")
+	}
+	//find products name
+
+	var productsName []string
+	for i :=range products{
+		prdName,err :=usrU.userRepo.FindProductNames(products[i])
+
+		if err !=nil{
+			return []models.GetCart{},err
+		}
+		productsName =append(productsName, prdName)
+	}
+	//find quantity
+	
+
+	
+}

@@ -100,10 +100,43 @@ func (usrU *userUsecase) AddAddress(id int ,address models.AddAddress)error{
 	}
 	return nil
 }
-func (usrU *userUsecase)GetAddresses (id int )([]domain.Address,error){
+func (usrU *userUsecase)GetAddresses(id int )([]domain.Address,error){
 	addresses,err := usrU.userRepo.GetAddresses(id)
 	if err !=nil{
 		return []domain.Address{},err
 	}
 	return addresses,nil
+}
+
+func( usrU *userUsecase)GetUserDetails(id int)(models.UserResponse,error){
+	userDetails,err :=usrU.userRepo.GetUserDetails(id)
+	if err !=nil{
+		return models.UserResponse{},err
+	}
+	return userDetails,nil
+}
+func (usrU *userUsecase)ChangePassword(id int ,old string,password string,repassword string)error{
+	userPass,err :=usrU.userRepo.GetPassword(id)
+	if err !=nil{
+		return errors.New("couldn't get user password")
+	}
+	if err :=bcrypt.CompareHashAndPassword([]byte(userPass),[]byte(old));err !=nil{
+		return errors.New("password is incorrect ")
+
+	}
+	if password !=repassword{
+		return errors.New("password not matching")
+	}
+	newPass ,err :=bcrypt.GenerateFromPassword([]byte (password),10)
+	if err !=nil{
+		return err
+	}
+	return usrU.ChangePassword(id ,string(newPass))
+}
+func(usrU *userUsecase) GetCartID(userID int)(int,error){
+	cartId,err :=usrU.userRepo.GetCartID(userID)
+	if err !=nil{
+		return 0,errors.New("couldn't get cart id")
+	}
+	return cartId,nil
 }

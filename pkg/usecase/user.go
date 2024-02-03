@@ -7,9 +7,8 @@ import (
 	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
-	"hash"
-
 	"golang.org/x/crypto/bcrypt"
+	// "golang.org/x/tools/go/callgraph/rta"
 )
 type userUsecase struct{
 	userRepo interfaces.UserRepository
@@ -52,7 +51,7 @@ func(usrU *userUsecase) Login(user models.UserLogin)(models.UserToken, error){
 		Token: tokenString,
 	},nil
 }
-func(usrU *userUsecase)signUp(user models.UserDetails)(models.UserToken,error){
+func(usrU *userUsecase)SignUp(user models.UserDetails)(models.UserToken,error){
 	//check the user exist or not ,if exist show the error (its a signup function)
 	userExist :=usrU.userRepo.CheckUserAvailability(user.Email)
 	if userExist {
@@ -264,3 +263,41 @@ func(usrU *userUsecase)ClearCart(cartID int)error{
 	}
 	return nil
 }
+func (usrU *userUsecase)UpdateQuantityLess(id,inv_id int)error{
+	if err :=usrU.userRepo.UpdateQuantityLess(id ,inv_id);err !=nil{
+		return err
+	}
+	return nil
+}
+func (usrU *userUsecase) UpdateQuantityAdd(id, inv_id int) error {
+	if err := usrU.userRepo.UpdateQuantityAdd(id, inv_id); err != nil {
+		return err
+	}
+	return nil
+}
+func (usrU *userUsecase) GetWallet(id,page,limit int)(models.Wallet,error){
+	//get wallet id
+
+	walletId,err :=usrU.walletRepo.FindWalletIdFromUserId(id)
+	if err !=nil{
+		return models.Wallet{},errors.New("couldn't find the wallet id from user id")
+
+	}
+	//get wallet balance
+	balance ,err :=usrU.walletRepo.GetBalance(walletId)
+	if err !=nil{
+		return models.Wallet{},errors.New("couldn't find the wallet balance")
+	}
+	//get wallet history (history with amount,purpose,time, walletId)
+	history,err :=usrU.walletRepo.GetHistory(walletId,page,limit)
+	if err !=nil{
+		return models.Wallet{},errors.New("couldn't find wallet history")
+
+	}
+	var wallet models.Wallet
+	wallet.Balance=balance
+	wallet.History =history
+	return wallet,nil
+}
+
+

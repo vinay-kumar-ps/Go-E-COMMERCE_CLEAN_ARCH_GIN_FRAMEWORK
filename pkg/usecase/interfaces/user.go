@@ -8,7 +8,7 @@ import (
 type UserUsecase interface{
 
 	Login(user models.UserLogin)(models.UserToken,error)
-	 SignUp (user models.UserDetails)(models.UserToken,error)
+	 SignUp(user models.UserDetails)(models.UserToken,error)
 	 AddAddress(id int ,address models.AddAddress)error
 	 GetAddresses(id int)([]domain.Address,error)
 	 GetUserDetails(id int)(models.UserResponse,error)

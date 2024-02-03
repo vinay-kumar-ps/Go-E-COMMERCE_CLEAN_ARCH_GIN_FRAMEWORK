@@ -17,7 +17,7 @@ type userUsecase struct{
 
 }
 
-func NewUserUsecase(userRepo interfaces.UserRepository,offerRepo ,walletRepo interfaces.WalletRepository)services.UserUsecase{
+func NewUserUsecase(userRepo interfaces.UserRepository, offerRepo interfaces.OfferRepository, walletRepo interfaces.WalletRepository) services.UserUsecase {
 	return&userUsecase{
 		userRepo: userRepo,
 		offerRepo: offerRepo,

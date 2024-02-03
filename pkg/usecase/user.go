@@ -131,7 +131,7 @@ func (usrU *userUsecase)ChangePassword(id int ,old string,password string,repass
 	if err !=nil{
 		return err
 	}
-	return usrU.ChangePassword(id ,string(newPass))
+	return usrU.userRepo.ChangePassword(id, string(newPass))
 }
 func(usrU *userUsecase) GetCartID(userID int)(int,error){
 	cartId,err :=usrU.userRepo.GetCartID(userID)
@@ -191,7 +191,76 @@ func (usrU *userUsecase)GetCart(id ,page,limit int) ([]models.GetCart,error)  {
 		productsName =append(productsName, prdName)
 	}
 	//find quantity
-	
+	var productQuantity []int
 
-	
+	for q := range products{
+		prdQ,err := usrU.userRepo.FindCartQuantity(cartId,products[q])
+		if err !=nil{
+			return []models.GetCart{},err
+
+		}
+		productQuantity =append(productQuantity, prdQ)
+
+	}
+	//find price of the product
+	var productPrice []float64
+
+	for p :=range products{
+		prdP,err :=usrU.userRepo.FindPrice(products[p])
+		if err !=nil{
+			return []models.GetCart{},err
+		}
+		productPrice =append(productPrice, prdP)
+	}
+
+//find category 
+var productCategory []int
+for c := range products{
+	prdC ,err :=usrU.userRepo.FindCategory(products[c])
+	if err !=nil{
+		return []models.GetCart{},err
+
+	}
+	productCategory=append(productCategory, prdC)
+}
+var getCart []models.GetCart
+for i :=range products {
+	var get models.GetCart
+	get.ProductName =productsName[i]
+	get.Category_id =productCategory[i]
+	get.Quantity=productCategory[i]
+	get .Total=productPrice[i]
+	getCart =append(getCart, get)
+}
+//find offers 
+
+var offers []int
+
+for i := range productCategory{
+	c ,err :=usrU.offerRepo.FindDiscountPercentage(productCategory[i])
+	if err !=nil{
+		return []models.GetCart{},err
+	}
+	offers =append(offers, c)
+}
+//find discount price
+for i :=range getCart{
+	getCart[i].DiscountPrice =(getCart[i].Total) -(getCart[i].Total *float64(offers[i]/ 100))
+}
+return getCart,nil
+
+} 
+func(usrU *userUsecase)RemoveFromCart(id int,inventoryID int)error{
+	err :=usrU.userRepo.RemoveFromCart(id,inventoryID)
+	if err !=nil{
+		return err
+	}
+	return nil
+}
+func(usrU *userUsecase)ClearCart(cartID int)error{
+	err :=usrU.userRepo.ClearCart(cartID)
+	if err !=nil{
+		return err
+	}
+	return nil
 }

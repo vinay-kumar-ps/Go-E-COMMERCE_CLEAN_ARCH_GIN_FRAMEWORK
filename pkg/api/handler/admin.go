@@ -2,12 +2,13 @@ package handler
 
 import (
 	services "ecommerce/pkg/usecase/interfaces"
-	"ecommerce/pkg/utils/models"
-	"ecommerce/pkg/utils/response"
+models	  "ecommerce/pkg/utils/models"
+ response	"ecommerce/pkg/utils/response"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
 )
 type AdminHandler struct {
 	adminUsecase services.AdminUsecase
@@ -107,19 +108,33 @@ func(ah *AdminHandler) UnBlockUser(c *gin.Context){
 // @Failure		500		{object}	response.Response{}
 // @Router			/admin/users [get]
 
-func(ah *AdminHandler)GetUsers(c *gin.Context){
-	pageStr :=c.Query("page")
-	page,err :=strconv.Atoi(pageStr)
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"page number not in right format",nil,err.Error())
+func (ah *AdminHandler) GetUsers(c *gin.Context) {
+    pageStr := c.Query("page")
+    page, err := strconv.Atoi(pageStr)
 
-		c.JSON(http.StatusBadRequest,errorRes)
-		return
-	}
-	users ,err :=ah.adminUsecase.GetUsers(page)
-	if err !=nil{
-		erroRes:= response.ClientResponse(http.StatusBadRequest,"could not retrive records",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
-		return
-	}
+    if err != nil {
+        errorRes := response.ClientResponse(http.StatusBadRequest, "page number not in right format", nil, err.Error())
+        c.JSON(http.StatusBadRequest, errorRes)
+        return
+    }
+
+    limitStr := c.Query("limit")  // Assuming you have a "limit" query parameter
+    limit, err := strconv.Atoi(limitStr)
+
+    if err != nil {
+        errorRes := response.ClientResponse(http.StatusBadRequest, "limit not in right format", nil, err.Error())
+        c.JSON(http.StatusBadRequest, errorRes)
+        return
+    }
+
+    users, err := ah.adminUsecase.GetUsers(page, limit)
+
+    if err != nil {
+        errorRes := response.ClientResponse(http.StatusBadRequest, "could not retrieve records", nil, err.Error())
+        c.JSON(http.StatusBadRequest, errorRes)
+        return
+    }
+
+    successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the users", users, nil)
+    c.JSON(http.StatusOK, successRes)
 }

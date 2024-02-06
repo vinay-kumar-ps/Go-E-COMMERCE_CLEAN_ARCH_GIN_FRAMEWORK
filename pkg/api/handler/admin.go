@@ -138,3 +138,33 @@ func (ah *AdminHandler) GetUsers(c *gin.Context) {
     successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the users", users, nil)
     c.JSON(http.StatusOK, successRes)
 }
+
+// @Summary		ADD NEW PAYMENT METHOD
+// @Description	admin can add new payment methods
+// @Tags			Admin
+// @Accept			json
+// @Produce		json
+// @Security		Bearer
+// @Param			payment	body		models.NewPaymentMethod	true	"payment method"
+// @Success		200		{object}	response.Response{}
+// @Failure		500		{object}	response.Response{}
+// @Router			/admin/payment/payment-method/new [post
+
+func (ah  *AdminHandler) NewPaymentMethod(c *gin.Context){
+	var method models.NewPaymentMethod
+	if err :=c.BindJSON(&method); err !=nil{
+
+		errorRes := response.ClientResponse(http.StatusBadRequest,"fields provided are in wrong format ",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	err := ah.adminUsecase.NewPaymentMethod(method.PaymentMethod)
+	if err !=nil{
+		errorRes :=response.ClientResponse(http.StatusBadRequest,"could not add the payment method",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	successRes :=response.ClientResponse(http.StatusOK,"successfully added payment method",nil,nil)
+	c.JSON(http.StatusOK,successRes)
+
+}

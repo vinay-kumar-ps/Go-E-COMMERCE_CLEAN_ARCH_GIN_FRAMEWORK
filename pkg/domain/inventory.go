@@ -2,25 +2,19 @@ package domain
 
 //Inventory represents the products in the website
 
-type Inventory struct {
+type Inventories struct {
 	ID          uint     `json:"id" gorm:"unique;not null"`
 	CategoryID  int      `json:"category_id"`
-	Category    Category `json:"-" gorm:"foreignkey:CategoryID;constraint:OneDelete:CASCADE"`
+	Category    Category `json:"-" gorm:"foreignkey:CategoryID;constraint:OnDelete:CASCADE"`
 	ProductName string   `json:"product_name"`
-	Description string   `json:"description"`
 	Image       string   `json:"image"`
+	Size        string   `json:"size" gorm:"size:5;default:'M';check:size IN ('S', 'M', 'L', 'XL', 'XXL')"`
 	Stock       int      `json:"stock"`
-	Price       int      `json:"price"`
+	Price       float64  `json:"price"`
 }
 
-//category represents the category of product
 type Category struct {
 	ID       uint   `json:"id" gorm:"unique;not null"`
 	Category string `json:"category"`
-}
-type Image struct {
-	ID          uint   `json:"id" gorm:"unique;not null"`
-	InventoryID int    `json:"inventory_id"`
-	Inventory   int    `json:"-" gorm:"foreignkey:InventoryiD"`
-	ImageURL    string `json:"imageurl"`
+	Image    string `json:"category_image"`
 }

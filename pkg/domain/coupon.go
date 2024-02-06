@@ -1,10 +1,10 @@
 package domain
 
-//The Coupon struct defines the structure of a coupon
+import "gorm.io/gorm"
 
-type Coupon struct {
-	ID           int    `json:"-" gorm:"primarykey"`
-	Name         string `json:"name" gorm:"unique;not null"`
-	DiscountRate int    `json:"discount_rate"`
-	Valid        bool   `gorm:"default:True"`
+type Coupons struct {
+	gorm.Model
+	Coupon       string `json:"coupon" gorm:"unique;not null"`
+	DiscountRate int    `json:"discount_rate" gorm:"not null"`
+	Valid        bool   `json:"valid" gorm:"default:true"`
 }

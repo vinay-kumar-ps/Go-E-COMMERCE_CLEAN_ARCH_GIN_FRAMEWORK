@@ -29,4 +29,8 @@ type UserDetailsAtAdmin struct {
  type CustomDates struct{
 	StartingDate time.Time `json:"startingDate"`
 	EndDate time.Time`json:"endDate"`
- }
+ 
+}
+type NewPaymentMethod struct {
+	PaymentMethod string `json:"payment_method"`
+}

@@ -7,30 +7,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type otpRepository struct{
+type otpRepository struct {
 	DB *gorm.DB
 }
-func NewOtpRepository (DB *gorm.DB) interfaces.OtpRepository {
+
+func NewOtpRepository(DB *gorm.DB) interfaces.OtpRepository {
 	return &otpRepository{
 		DB: DB,
 	}
 }
-func (otr *otpRepository) FindUserByMobileNumber(phone string)bool{
+
+func (ot *otpRepository) FindUserByMobileNumber(phone string) bool {
+
 	var count int
-	err := otr.DB.Raw("SELECT COUNT (*) users WHERE phone =?",phone).Scan(&count).Error
-	if err != nil{
+	if err := ot.DB.Raw("select count(*) from users where phone = ?", phone).Scan(&count).Error; err != nil {
 		return false
 	}
-	return count >0
-}
-func (otr *otpRepository) UserDetailsUsingPhone(phone string) (models.UserResponse,error){
-	var userDetails  models.UserResponse 
-	err :=otr.DB.Raw("SELECT * FROM users WHERE phone=?",phone).Scan(&userDetails).Error
-	
-	if err != nil{
-		return models.UserResponse{},err
 
+	return count > 0
+
+}
+
+func (ot *otpRepository) UserDetailsUsingPhone(phone string) (models.UserDetailsResponse, error) {
+
+	var usersDetails models.UserDetailsResponse
+	if err := ot.DB.Raw("select * from users where phone = ?", phone).Scan(&usersDetails).Error; err != nil {
+		return models.UserDetailsResponse{}, err
 	}
-	return userDetails,nil
+
+	return usersDetails, nil
 
 }

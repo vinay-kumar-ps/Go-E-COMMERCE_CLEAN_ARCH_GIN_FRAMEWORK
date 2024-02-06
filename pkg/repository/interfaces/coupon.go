@@ -1,6 +1,9 @@
 package interfaces
 
-import "ecommerce/pkg/domain"
+import(
+	 "ecommerce/pkg/domain"
+	"ecommerce/pkg/utils/models"
+	)
 
 type CouponRepository interface {
 	AddCoupon(models.Coupons) error

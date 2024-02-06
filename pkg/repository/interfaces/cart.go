@@ -1,6 +1,6 @@
 package interfaces
 
-import "ecommerce/pkg/domain"
+import "ecommerce/pkg/utils/models"
 
 type CartRepository interface {
 	GetCart(id int) ([]models.GetCart, error)

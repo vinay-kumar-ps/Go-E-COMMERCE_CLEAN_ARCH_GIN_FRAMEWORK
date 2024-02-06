@@ -1,40 +1,22 @@
-package models
+ackage models
 
-type InventoryResponse struct {
-	ProductID int
-	//stock int
+type AdminLogin struct {
+	Email    string `json:"email,omitempty" validate:"required"`
+	Password string `json:"password" validate:"min=8,max=20"`
 }
 
-type Inventory struct {
-	ID          uint    `json:"id"`
-	CategoryID  int     `json:"category_id"`
-	Image       string  `json:"image"`
-	ProductName string  `json:"productname"`
-	Description string  `json:"description"`
-	Stock       int     `json:"stock"`
-	Price       float64 `json:"price"`
+type AdminDetailsResponse struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name" `
+	Email string `json:"email" `
 }
-type UpdateInventory struct {
-	CategoryID  int     `json:"category_id"`
-	ProductName string  `json:"productName"`
-	Description string  `json:"description"`
-	Stock       int     `json:"stock"`
-	Price       float64 `json:"price"`
+
+type NewPaymentMethod struct {
+	PaymentMethod string `json:"payment_method"`
 }
-type InventoryList struct {
-	ID          uint    `json:"id"`
-	Category    string  `json:"category"`
-	Image       string  `json:"image"`
-	ProductName string  `json:"productName"`
-	Description string  `json:"description"`
-	Stock       int     `json:"stock"`
-	Price       float64 `json:"price"`
-}
-type InventoryDetails struct{
-	Inventory Inventory
-	AdditionalImages []ImagesInfo
-}
-type ImagesInfo struct{
-	ID int `json:"id"`
-	Imageurl string `json:"imageurl"`
+
+type Coupons struct {
+	Coupon       string `json:"coupon" gorm:"unique;not null"`
+	DiscountRate int    `json:"discount_rate" gorm:"not null"`
+	Valid        bool   `json:"valid" gorm:"default:true"`
 }

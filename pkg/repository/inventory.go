@@ -68,7 +68,7 @@ func (i *inventoryRepository) UpdateInventory(pid int, stock int) (models.Invent
 		return models.InventoryResponse{}, err
 	}
 	newdetails.ProductID = pid
-	newdetails.stock = newstock
+	newdetails.Stock = newstock
 
 	return newdetails, nil
 }

@@ -15,7 +15,7 @@ type CheckOut struct{
 	PaymentMethod[]domain.PaymentMethod
 	TotalPrice float64
 }
-type Order struct{
+type order struct{
 	AddressId int `json:"address_id"`
 	PaymentId int `json:"payment_ID"`
 

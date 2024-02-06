@@ -1,6 +1,8 @@
 package interfaces
 
-import "ecommerce/pkg/domain"
+import( "ecommerce/pkg/domain"
+"ecommerce/pkg/utils/models"
+)
 
 
 type CategoryRepository interface {

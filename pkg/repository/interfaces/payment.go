@@ -1,7 +1,8 @@
 package interfaces
 
 
-type OtpRepository interface {
-	FindUserByMobileNumber(phone string) bool
-	UserDetailsUsingPhone(phone string) (models.UserDetailsResponse, error)
+type PaymentRepository interface {
+	FindUsername(user_id int) (string, error)
+	FindPrice(order_id int) (float64, error)
+	UpdatePaymentDetails(orderID, paymentID, razorID string) error
 }

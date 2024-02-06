@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
 	"strconv"
@@ -9,282 +8,190 @@ import (
 	"gorm.io/gorm"
 )
 
-type inventoryRespository struct {
+type inventoryRepository struct {
 	DB *gorm.DB
 }
 
-// Constructor function
-
-func NewInventoryRepository(DB *gorm.DB) interfaces.InventoryRespository {
-	return &inventoryRespository{
+func NewInventoryRepository(DB *gorm.DB) *inventoryRepository {
+	return &inventoryRepository{
 		DB: DB,
 	}
 }
 
-func (ir *inventoryRespository) AddInventory(inventory models.Inventory, url string) (models.InventoryResponse, error) {
-	var inventoryResp models.InventoryResponse
+func (i *inventoryRepository) AddInventory(inventory models.AddInventories, url string) (models.InventoryResponse, error) {
 
-	query := `INSERT INTO inventories (category_id,product_name,description,stock,price,image)
-	VALUES(?,?,?,?,?,?)RETURNING id`
-
-	err := ir.DB.Raw(query, inventory.CategoryID, inventory.ProductName, inventory.Description, inventory.Stock, inventory.Price, inventory.Image, url).Scan(&inventoryResp.ProductID).Error
+	query := `
+    INSERT INTO inventories (category_id, product_name, size, stock, price, image)
+    VALUES (?, ?, ?, ?, ?, ?);
+    `
+	err := i.DB.Exec(query, inventory.CategoryID, inventory.ProductName, inventory.Size, inventory.Stock, inventory.Price, url).Error
 	if err != nil {
 		return models.InventoryResponse{}, err
 	}
-	return models.InventoryResponse{}, nil
+
+	var inventoryResponse models.InventoryResponse
+
+	return inventoryResponse, nil
+
 }
 
-func (ir *inventoryRespository) UpdateImage(inventId int, url string) (models.Inventory, error) {
-
-	// check db connecton
-	if ir.DB == nil {
-		return models.Inventory{}, errors.New("database connection failed while updating image")
-	}
-
-	// updating image
-	err := ir.DB.Exec("UPDATE inventories SET image=? WHERE id= ? ", url, inventId).Error
-
+func (i *inventoryRepository) CheckInventory(pid int) (bool, error) {
+	var k int
+	err := i.DB.Raw("SELECT COUNT(*) FROM inventories WHERE id=?", pid).Scan(&k).Error
 	if err != nil {
-		return models.Inventory{}, err
+		return false, err
 	}
+
+	if k == 0 {
+		return false, err
+	}
+
+	return true, err
+}
+
+func (i *inventoryRepository) UpdateInventory(pid int, stock int) (models.InventoryResponse, error) {
+
+	// Check the database connection
+	if i.DB == nil {
+		return models.InventoryResponse{}, errors.New("database connection is nil")
+	}
+
+	// Update the
+	if err := i.DB.Exec("UPDATE inventories SET stock = stock + $1 WHERE id= $2", stock, pid).Error; err != nil {
+		return models.InventoryResponse{}, err
+	}
+
 	// Retrieve the update
-	var updatedImageInventory models.Inventory
-	err = ir.DB.Raw("SELECT * FROM inventories WHERE id = ?", inventId).Scan(&updatedImageInventory).Error
-	if err != nil {
-		return models.Inventory{}, err
+	var newdetails models.InventoryResponse
+	var newstock int
+	if err := i.DB.Raw("SELECT stock FROM inventories WHERE id=?", pid).Scan(&newstock).Error; err != nil {
+		return models.InventoryResponse{}, err
 	}
-	return updatedImageInventory, nil
+	newdetails.ProductID = pid
+	newdetails.stock = newstock
+
+	return newdetails, nil
 }
 
-func (ir *inventoryRespository) CheckInventory(pid int) (bool, error) {
-	var check int
-	err := ir.DB.Raw("SELECT COUNT(*)FROM inventories WHERE id = ?", pid).Scan(&check).Error
+func (i *inventoryRepository) DeleteInventory(inventoryID string) error {
+	id, err := strconv.Atoi(inventoryID)
 	if err != nil {
-		return false, err
-	}
-	if check == 0 {
-		return false, err
-	}
-	return true, nil
-}
-
-func (ir *inventoryRespository) UpdateInventory(pid int, invData models.UpdateInventory) (models.Inventory, error) {
-	if ir.DB == nil {
-		return models.Inventory{}, errors.New("database connection failed while update inventory")
+		return errors.New("converting into integer not happened")
 	}
 
-	if invData.CategoryID != 0 {
-		if err := ir.DB.Exec("UPDATE inventories SET categorie_id WHERE id=?", invData.CategoryID, pid).Error; err != nil {
-			return models.Inventory{}, err
-		}
-	}
-
-	if invData.ProductName != "" && invData.ProductName != "string" {
-		if err := ir.DB.Exec("UPDATE inventories SET product_name=? WHERE id= ?", invData.ProductName, pid).Error; err != nil {
-			return models.Inventory{}, err
-		}
-	}
-
-	if invData.Description != "" && invData.Description != "string" {
-		if err := ir.DB.Exec("UPDATE inventories SET description=? WHERE id=?", invData.Description, pid).Error; err != nil {
-			return models.Inventory{}, err
-		}
-	}
-
-	if invData.Stock != 0 {
-		if err := ir.DB.Exec("UPDATE inventories SET stock= ? WHERE id=?", invData.Stock, pid).Error; err != nil {
-			return models.Inventory{}, err
-		}
-	}
-
-	if invData.Price != 0 {
-		if err := ir.DB.Exec("UPDATE inventories SET price=? WHERE id=?", invData.Price, pid).Error; err != nil {
-			return models.Inventory{}, err
-		}
-	}
-
-	// retrieve the updates
-	var updatedInventory models.Inventory
-	err := ir.DB.Raw("SELECT * FROM inventories WHERE Id = ?", pid).Scan(&updatedInventory).Error
-	if err != nil {
-		return models.Inventory{}, err
-	}
-	return updatedInventory, nil
-}
-
-func (ir *inventoryRespository) DeleteInventory(inventoryId string) error {
-	id, err := strconv.Atoi(inventoryId)
-	if err != nil {
-		return errors.New("string to int conversion failed")
-	}
-	result := ir.DB.Exec("DELETE FROM inventories WHERE id = ? ", id)
+	result := i.DB.Exec("DELETE FROM inventories WHERE id = ?", id)
 
 	if result.RowsAffected < 1 {
-		return errors.New("no records exists with this id")
+		return errors.New("no records with that ID exist")
 	}
+
 	return nil
 }
 
-func (ir *inventoryRespository) ShowIndividualProducts(id string) (models.Inventory, error) {
-	pid, err := strconv.Atoi(id)
-	if err != nil {
-		return models.Inventory{}, errors.New("string to int conversion failed")
+// detailed product details
+func (i *inventoryRepository) ShowIndividualProducts(id string) (models.Inventories, error) {
+	pid, error := strconv.Atoi(id)
+	if error != nil {
+		return models.Inventories{}, errors.New("convertion not happened")
 	}
-	var product models.Inventory
+	var product models.Inventories
+	err := i.DB.Raw(`
+	SELECT
+		*
+		FROM
+			inventories
+		
+		WHERE
+			inventories.id = ?
+			`, pid).Scan(&product).Error
 
-	err = ir.DB.Raw(`
-		SELECT * FROM inventories
-		WHERE Inventories.id = ?
-	`, pid).Scan(&product).Error
 	if err != nil {
-		return models.Inventory{}, errors.New("error occured while showing individual product")
+		return models.Inventories{}, errors.New("error retrieved record")
 	}
-	return product, err
+	return product, nil
+
 }
 
-func (ir *inventoryRespository) ListProducts(page, limit int) ([]models.InventoryList, error) {
+func (ad *inventoryRepository) ListProducts(page int) ([]models.Inventories, error) {
+	// pagination purpose -
 	if page == 0 {
 		page = 1
 	}
-	if limit == 0 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
-	var productDetails []models.InventoryList
+	offset := (page - 1) * 10
+	var productDetails []models.Inventories
 
-	err := ir.DB.Raw("SELECT inventories.id,inventories.product_name,inventories.description,inventories.stock,inventories.price,inventories.image,categories.category AS category FROM inventories JOIN categories ON inventories.category_id = categories.id LIMIT ? OFFSET ?", limit, offset).Scan(&productDetails).Error
-	if err != nil {
-		return []models.InventoryList{}, err
+	if err := ad.DB.Raw("select id,category_id,product_name,image,size,stock,price from inventories limit $1 offset $2", 10, offset).Scan(&productDetails).Error; err != nil {
+		return []models.Inventories{}, err
 	}
+
+	return productDetails, nil
+
+}
+
+func (ad *inventoryRepository) ListProductsByCategory(id int) ([]models.Inventories, error) {
+
+	var productDetails []models.Inventories
+
+	if err := ad.DB.Raw("select id,category_id,product_name,image,size,stock,price from inventories WHERE category_id = $1", id).Scan(&productDetails).Error; err != nil {
+		return []models.Inventories{}, err
+	}
+
+	return productDetails, nil
+
+}
+
+func (i *inventoryRepository) CheckStock(pid int) (int, error) {
+	var k int
+	if err := i.DB.Raw("SELECT stock FROM inventories WHERE id=$1", pid).Scan(&k).Error; err != nil {
+		return 0, err
+	}
+	return k, nil
+}
+
+func (i *inventoryRepository) CheckPrice(pid int) (float64, error) {
+	var k float64
+	err := i.DB.Raw("SELECT price FROM inventories WHERE id=?", pid).Scan(&k).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return k, nil
+}
+
+func (ad *inventoryRepository) SearchProducts(key string) ([]models.Inventories, error) {
+	var productDetails []models.Inventories
+
+	query := `
+	SELECT i.*
+	FROM inventories i
+	LEFT JOIN categories c ON i.category_id = c.id
+	WHERE i.product_name ILIKE '%' || ? || '%'
+	OR
+	c.category ILIKE '%' || ? || '%'
+`
+	if err := ad.DB.Raw(query, key, key).Scan(&productDetails).Error; err != nil {
+		return []models.Inventories{}, err
+	}
+
 	return productDetails, nil
 }
-func (ir *inventoryRespository) CheckStock(inventory_id int) (int, error) {
-	var stock int
-	err := ir.DB.Raw("SELECT stock FROM inventories WHERE id = ? ", inventory_id).Scan(&stock).Error
+
+func (i *inventoryRepository) UpdateProductImage(id int, url string) error {
+
+	err := i.DB.Exec("UPDATE inventories SET image = $1 WHERE id = $2", url, id).Error
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return stock, nil
-}
 
-func (ir *inventoryRespository) CheckPrice(inventory_id int) (float64, error) {
-	var price float64
-	err := ir.DB.Raw("SELECT price FROM inventories WHERE id = ?", inventory_id).Scan(&price).Error
-	if err != nil {
-		return 0, err
-	}
-	return price, err
-}
-
-func (ir *inventoryRespository) SearchProducts(key string, page, limit int) ([]models.InventoryList, error) {
-	if page == 0 {
-		page = 1
-	}
-	if limit == 0 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
-
-	var productSearchResult []models.InventoryList
-
-	query := `
-	
-	SELECT 
-		inventories.id,
-		inventories.product_name,
-		inventories.description,
-		inventories.stock,
-		inventories.price,
-		inventories.image,
-		categories.category AS category
-	FROM
-		inventories
-	JOIN
-		categories
-	ON
-		inventories.category_id = categories.id
-	WHERE
-		product_name ILIKE '%' || ? || '%'
-	OR description ILIKE '%' || ? || '%'
-	LIMIT ? OFFSET ?
-	`
-	err := ir.DB.Raw(query, key, limit, offset).Scan(&productSearchResult).Error
-	if err != nil {
-		return []models.InventoryList{}, err
-	}
-	return productSearchResult, nil
-}
-
-func (ir *inventoryRespository) GetCategoryProducts(categoryId, page, limit int) ([]models.InventoryList, error) {
-	if page == 0 {
-		page = 1
-	}
-	if limit == 0 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
-	var categoryProd []models.InventoryList
-
-	query := `
-	
-	SELECT 
-		inventories.id,
-		inventories.product_name,
-		inventories.description,
-		inventories.image,
-		inventories.stock,
-		inventories.price
-		categories.categorie AS category
-	FROM
-		inventories 
-	JOIN
-		categories
-	ON
-		inventories.category_id = categories.id
-	WHERE 
-		inventories.category_id = ?
-	LIMIT ? OFFSET ?
-	`
-
-	err := ir.DB.Raw(query, categoryId, limit, offset).Scan(&categoryProd).Error
-	if err != nil {
-		return []models.InventoryList{}, err
-	}
-	return categoryProd, nil
-}
-
-func (ir *inventoryRespository) AddImage(product_id int, image_url string) (models.InventoryResponse, error) {
-	var addImageResponse models.InventoryResponse
-
-	query := `
-	
-	INSERT INTO 
-		images (inventory_id,image_url)
-	VALUES (?,?)
-	RETURNING 
-		inventory_id
-	`
-	err := ir.DB.Raw(query, product_id, image_url).Scan(&addImageResponse).Error
-	if err != nil {
-		return models.InventoryResponse{}, errors.New("adding image failed")
-	}
-	return addImageResponse, nil
-}
-
-func (ir *inventoryRespository) DeleteImage(product_id int, imageId int) error {
-	result := ir.DB.Exec("DELETE FROM images WHERE id= ?", imageId)
-
-	if result.RowsAffected < 1 {
-		return errors.New("no image exists with this id")
-	}
 	return nil
 }
 
-func (ir *inventoryRespository) GetImagesFromInventoryId(product_id int) ([]models.ImagesInfo, error) {
-	var imagesFromInvId []models.ImagesInfo
-	err := ir.DB.Raw("SELECT id,image_url FROM images WHERE inventory_id = ?", product_id).Scan(&imagesFromInvId).Error
+func (i *inventoryRepository) EditInventoryDetails(id int, model models.EditInventoryDetails) error {
+
+	err := i.DB.Exec("UPDATE inventories SET product_name = $1, category_id = $2, price = $3, size = $4 WHERE id = $5", model.Name, model.CategoryID, model.Price, model.Size, id).Error
 	if err != nil {
-		return []models.ImagesInfo{}, err
+		return err
 	}
-	return imagesFromInvId, nil
+
+	return nil
 }

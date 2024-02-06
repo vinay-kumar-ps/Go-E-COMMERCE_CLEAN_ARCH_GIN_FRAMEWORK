@@ -4,6 +4,7 @@ import (
 	"ecommerce/pkg/domain"
 	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -14,57 +15,110 @@ type adminRepository struct {
 	DB *gorm.DB
 }
 
-func NewAdminRepository(DB *gorm.DB)interfaces.AdminRepository{
+func NewAdminRepository(DB *gorm.DB) interfaces.AdminRepository {
 	return &adminRepository{
-		DB:DB,
+		DB: DB,
 	}
 }
 
-func (ar *adminRepository) LoginHandler(adminDetails models.AdminLogin) (domain.Admin, error) {
-	var adminCompareDetail domain.Admin
-	err := ar.DB.Raw("SELECT * FROM admins WHERE email=?", adminDetails.Email).Scan(&adminCompareDetail).Error
-	if err != nil {
+func (ad *adminRepository) LoginHandler(adminDetails models.AdminLogin) (domain.Admin, error) {
+
+	var adminCompareDetails domain.Admin
+	if err := ad.DB.Raw("select * from admins where username = ? ", adminDetails.Email).Scan(&adminCompareDetails).Error; err != nil {
 		return domain.Admin{}, err
 	}
-	return adminCompareDetail, nil
+
+	return adminCompareDetails, nil
 }
 
-func (ar *adminRepository)GetUserById(id string)(domain.User,error){
-	userId,err:=strconv.Atoi(id)
-	if err!=nil{
-		return domain.User{},err
+func (ad *adminRepository) GetUserByID(id string) (domain.Users, error) {
+
+	user_id, err := strconv.Atoi(id)
+	if err != nil {
+		return domain.Users{}, err
 	}
-	query:=fmt.Sprintf("select * from users where id = '%d'",userId)
-	var userDetails domain.User
-	err =ar.DB.Raw(query).Scan(&userDetails).Error
-	if err!=nil{
-		return domain.User{},err
+
+	var count int
+	if err := ad.DB.Raw("select count(*) from users where id = ?", user_id).Scan(&count).Error; err != nil {
+		return domain.Users{}, err
 	}
-	return userDetails,nil
+	if count < 1 {
+		return domain.Users{}, errors.New("user for the given id does not exist")
+	}
+
+	query := fmt.Sprintf("select * from users where id = '%d'", user_id)
+	var userDetails domain.Users
+
+	if err := ad.DB.Raw(query).Scan(&userDetails).Error; err != nil {
+		return domain.Users{}, err
+	}
+
+	return userDetails, nil
 }
 
-// This function will both block and unblock user
-func (ar *adminRepository)UpdateBlockUserById(user domain.User)error{
-	err:=ar.DB.Exec("update users set permission = ? where id = ?",user.Permission,user.ID).Error
-	if err!=nil{
+// function which will both block and unblock a user
+func (ad *adminRepository) UpdateBlockUserByID(user domain.Users) error {
+
+	err := ad.DB.Exec("update users set blocked = ? where id = ?", user.Blocked, user.ID).Error
+	if err != nil {
 		return err
 	}
+
 	return nil
+
 }
 
-func (ar *adminRepository)GetUsers(page,limit int)([]models.UserDetailsAtAdmin,error){
-	if page== 0{
+func (ad *adminRepository) GetUsers(page int) ([]models.UserDetailsAtAdmin, error) {
+	// pagination purpose -
+	if page == 0 {
 		page = 1
 	}
-	if limit==0{
-		limit =10
-	}
-	offset:=(page-1)*limit
-
+	offset := (page - 1) * 5
 	var userDetails []models.UserDetailsAtAdmin
-	err:=ar.DB.Raw("select id,name,email,phone,permission from users limit ? offset ?",limit,offset).Scan(&userDetails).Error
-	if err!=nil{
-		return []models.UserDetailsAtAdmin{},err
+
+	if err := ad.DB.Raw("select id,name,email,phone,blocked from users limit ? offset ?", 20, offset).Scan(&userDetails).Error; err != nil {
+		return []models.UserDetailsAtAdmin{}, err
 	}
-	return userDetails,nil
+
+	return userDetails, nil
+
+}
+
+func (i *adminRepository) NewPaymentMethod(pay string) error {
+
+	if err := i.DB.Exec("insert into payment_methods(payment_name)values($1)", pay).Error; err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (a *adminRepository) ListPaymentMethods() ([]domain.PaymentMethod, error) {
+	var model []domain.PaymentMethod
+	err := a.DB.Raw("SELECT * FROM payment_methods where is_deleted = false").Scan(&model).Error
+	if err != nil {
+		return []domain.PaymentMethod{}, err
+	}
+
+	return model, nil
+}
+
+func (a *adminRepository) CheckIfPaymentMethodAlreadyExists(payment string) (bool, error) {
+	var count int64
+	err := a.DB.Raw("SELECT COUNT(*) FROM payment_methods WHERE payment_name = $1 and is_deleted = false", payment).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (a *adminRepository) DeletePaymentMethod(id int) error {
+	err := a.DB.Exec("UPDATE payment_methods SET is_deleted = true WHERE id = $1 ", id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

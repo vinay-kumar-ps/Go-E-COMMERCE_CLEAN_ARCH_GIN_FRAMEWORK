@@ -2,14 +2,10 @@ package interfaces
 
 import "ecommerce/pkg/utils/models"
 
-type WishlistRepository interface{
-	GetWishlist(id int)([]models.GetWishlist,error)
-	GetWishlistId(user_id int)(int, error)
-	CreateNewWishlist(user_id int)(int,error)
-	AddWishlistItem(wishlistId,inventoryId int)error
-	GetProductsInWishlist(wishlistId int)([]int,error)
-	FindProductNames(inventory_id int)(string,error)
-	FindPrice(inventory_id int)(float64,error)
-	FindCategory(inventory_id int)(string,error)
-	RemoveFromWishlist(wishlistId,inventoryId int)error
+type WishlistRepository interface {
+	AddToWishlist(user_id, inventory_id int) error
+	RemoveFromWishlist(inventory_id, UserID int) error
+	GetWishList(id int) ([]models.Inventories, error)
+	CheckIfTheItemIsPresentAtWishlist(userID, productID int) (bool, error)
+	CheckIfTheItemIsPresentAtCart(userID, productID int) (bool, error)
 }

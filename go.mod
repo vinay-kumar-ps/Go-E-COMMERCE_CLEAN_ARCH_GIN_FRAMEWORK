@@ -9,12 +9,14 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/jinzhu/copier v0.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/razorpay/razorpay-go v1.3.1
 	github.com/spf13/viper v1.18.2
 	github.com/twilio/twilio-go v1.16.1
 	github.com/unidoc/unipdf/v3 v3.53.0
 	golang.org/x/crypto v0.16.0
+	golang.org/x/tools v0.13.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
 )

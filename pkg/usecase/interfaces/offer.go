@@ -5,8 +5,9 @@ import (
 	"ecommerce/pkg/utils/models"
 )
 
- type OfferUsecase interface{
-	AddNewOffer(model models.CreateOffer)error
-	MakeOfferExpire(cartID int )error
-	GetOffers(page ,limit int)([]domain.Offer,error)
- }
+ 
+type OfferUseCase interface {
+	AddNewOffer(model models.OfferMaking) error
+	MakeOfferExpire(id int) error
+	GetOffers() ([]domain.Offer, error)
+}

@@ -1,303 +1,434 @@
 package usecase
 
 import (
+	config "ecommerce/pkg/config"
 	"ecommerce/pkg/domain"
-	"ecommerce/pkg/helper"
+	helper_interface "ecommerce/pkg/helper/interfaces"
 	interfaces "ecommerce/pkg/repository/interfaces"
-	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
-	"golang.org/x/crypto/bcrypt"
-	// "golang.org/x/tools/go/callgraph/rta"
 )
-type userUsecase struct{
-	userRepo interfaces.UserRepository
-	offerRepo interfaces.OfferRepository
-	walletRepo interfaces.WalletRepository
 
+type userUseCase struct {
+	userRepo            interfaces.UserRepository
+	cfg                 config.Config
+	otpRepository       interfaces.OtpRepository
+	inventoryRepository interfaces.InventoryRepository
+	orderRepository     interfaces.OrderRepository
+	helper              helper_interface.Helper
 }
 
-func NewUserUsecase(userRepo interfaces.UserRepository, offerRepo interfaces.OfferRepository, walletRepo interfaces.WalletRepository) services.UserUsecase {
-	return&userUsecase{
-		userRepo: userRepo,
-		offerRepo: offerRepo,
-       walletRepo: walletRepo,
+func NewUserUseCase(repo interfaces.UserRepository, cfg config.Config, otp interfaces.OtpRepository, inv interfaces.InventoryRepository, order interfaces.OrderRepository, h helper_interface.Helper) *userUseCase {
+	return &userUseCase{
+		userRepo:            repo,
+		cfg:                 cfg,
+		otpRepository:       otp,
+		inventoryRepository: inv,
+		orderRepository:     order,
+		helper:              h,
 	}
 }
-func(usrU *userUsecase) Login(user models.UserLogin)(models.UserToken, error){
-	//check the user already exist or not
 
-	ok := usrU.userRepo.CheckUserAvailability(user.Email)
-	if !ok {
-		return models.UserToken{}, errors.New("user not exist")
-	}
-	//Get the user details in order to check password 
-	userDetails ,err :=usrU.userRepo.FindUserByEmail(user)
-	if err !=nil{
-		return models.UserToken{},err
-	}
-	//check the password
-	err =bcrypt.CompareHashAndPassword([]byte(userDetails.Password),[]byte(user.Password))
-	if err !=nil{
-		return models.UserToken{},errors.New("password is incorrrect")
-	}
-	//generate token 
-	tokenString ,err :=helper.GenerateUserToken(userDetails)
-	if err !=nil{
-		return models.UserToken{},errors.New("couldn't create token for user")
-	}
-	return models.UserToken{
-		Username: userDetails.Username,
-		Token: tokenString,
-	},nil
-}
-func(usrU *userUsecase)SignUp(user models.UserDetails)(models.UserToken,error){
-	//check the user exist or not ,if exist show the error (its a signup function)
-	userExist :=usrU.userRepo.CheckUserAvailability(user.Email)
+var InternalError = "Internal Server Error"
+var ErrorHashingPassword = "Error In Hashing Password"
+
+func (u *userUseCase) UserSignUp(user models.UserDetails, ref string) (models.TokenUsers, error) {
+	// Check whether the user already exist. If yes, show the error message, since this is signUp
+	userExist := u.userRepo.CheckUserAvailability(user.Email)
 	if userExist {
-		return models.UserToken{},errors.New("user already exist please sign in ")
+		return models.TokenUsers{}, errors.New("user already exist, sign in")
+	}
+	if user.Password != user.ConfirmPassword {
+		return models.TokenUsers{}, errors.New("password does not match")
+	}
 
+	referenceUser, err := u.userRepo.FindUserFromReference(ref)
+	if err != nil {
+		return models.TokenUsers{}, errors.New("cannot find reference user")
 	}
-	if user .Password!=user.ConfirmPassword{
-		return models.UserToken{},errors.New("password does't match")
+
+	// Hash password since details are validated
+
+	hashedPassword, err := u.helper.PasswordHashing(user.Password)
+	if err != nil {
+		return models.TokenUsers{}, errors.New(ErrorHashingPassword)
 	}
-	//hash the password
-	hashedPass,err :=helper.PasswordHashing(user.Password)
-	if err !=nil{
-		return models.UserToken{},err
+
+	user.Password = hashedPassword
+
+	referral, err := u.helper.GenerateRefferalCode()
+	if err != nil {
+		return models.TokenUsers{}, errors.New(InternalError)
 	}
-	user.Password=hashedPass
-	//insert the user into database
-	userData,err :=usrU.userRepo.SignUp(user)
-	if err !=nil{
-		return models.UserToken{},err
+
+	// add user details to the database
+	userData, err := u.userRepo.UserSignUp(user, referral)
+	if err != nil {
+		return models.TokenUsers{}, errors.New("could not add the user")
 	}
-	//create jwt token for user
-	tokenString ,err:= helper.GenerateUserToken(userData)
-	if err !=nil{
-		return models.UserToken{},errors.New("could't create token for user due to some internal error")
-		
+
+	// crete a JWT token string for the user
+	tokenString, err := u.helper.GenerateTokenClients(userData)
+	if err != nil {
+		return models.TokenUsers{}, errors.New("could not create token due to some internal error")
 	}
-	return models.UserToken{
-		Username: user.Username,
+
+	//credit 20 rupees to the user which is the source of the reference code
+	if err := u.userRepo.CreditReferencePointsToWallet(referenceUser); err != nil {
+		return models.TokenUsers{}, errors.New("error in crediting gift")
+	}
+
+	//create new wallet for user
+	if _, err := u.orderRepository.CreateNewWallet(userData.Id); err != nil {
+		return models.TokenUsers{}, errors.New("errror in creating new wallet")
+	}
+	return models.TokenUsers{
+		Users: userData,
 		Token: tokenString,
-
-	},nil
-	
+	}, nil
 }
-func (usrU *userUsecase) AddAddress(id int ,address models.AddAddress)error{
-	rslt :=usrU.userRepo.CheckIfFirstAddress(id)
-	var checkAddress bool 
+
+func (u *userUseCase) LoginHandler(user models.UserLogin) (models.TokenUsers, error) {
+
+	// checking if a username exist with this email address
+	ok := u.userRepo.CheckUserAvailability(user.Email)
+	if !ok {
+		return models.TokenUsers{}, errors.New("the user does not exist")
+	}
+
+	isBlocked, err := u.userRepo.UserBlockStatus(user.Email)
+	if err != nil {
+		return models.TokenUsers{}, errors.New(InternalError)
+	}
+
+	if isBlocked {
+		return models.TokenUsers{}, errors.New("user is blocked by admin")
+	}
+
+	// Get the user details in order to check the password, in this case ( The same function can be reused in future )
+	user_details, err := u.userRepo.FindUserByEmail(user)
+	if err != nil {
+		return models.TokenUsers{}, errors.New(InternalError)
+	}
+
+	err = u.helper.CompareHashAndPassword(user_details.Password, user.Password)
+	if err != nil {
+		return models.TokenUsers{}, errors.New("password incorrect")
+	}
+
+	var userDetails models.UserDetailsResponse
+
+	userDetails.Id = int(user_details.Id)
+	userDetails.Name = user_details.Name
+	userDetails.Email = user_details.Email
+	userDetails.Phone = user_details.Phone
+
+	tokenString, err := u.helper.GenerateTokenClients(userDetails)
+	if err != nil {
+		return models.TokenUsers{}, errors.New("could not create token")
+	}
+
+	return models.TokenUsers{
+		Users: userDetails,
+		Token: tokenString,
+	}, nil
+
+}
+
+func (i *userUseCase) AddAddress(id int, address models.AddAddress) error {
+
+	rslt := i.userRepo.CheckIfFirstAddress(id)
+	var result bool
+
 	if !rslt {
-		checkAddress =true
+		result = true
+	} else {
+		result = false
+	}
 
-	}else{
-		checkAddress=false
+	err := i.userRepo.AddAddress(id, address, result)
+	if err != nil {
+		return errors.New("error in adding address")
 	}
-	if err :=usrU.userRepo.AddAddress(id,address,checkAddress);err !=nil{
-		return err
+
+	return nil
+
+}
+
+func (i *userUseCase) GetAddresses(id int) ([]domain.Address, error) {
+
+	addresses, err := i.userRepo.GetAddresses(id)
+	if err != nil {
+		return []domain.Address{}, errors.New("error in getting addresses")
 	}
+
+	return addresses, nil
+
+}
+
+func (i *userUseCase) GetUserDetails(id int) (models.UserDetailsResponse, error) {
+
+	details, err := i.userRepo.GetUserDetails(id)
+	if err != nil {
+		return models.UserDetailsResponse{}, errors.New("error in getting details")
+	}
+
+	return details, nil
+
+}
+
+func (i *userUseCase) ChangePassword(id int, old string, password string, repassword string) error {
+
+	userPassword, err := i.userRepo.GetPassword(id)
+	if err != nil {
+		return errors.New(InternalError)
+	}
+
+	err = i.helper.CompareHashAndPassword(userPassword, old)
+	if err != nil {
+		return errors.New("password incorrect")
+	}
+
+	if password != repassword {
+		return errors.New("passwords does not match")
+	}
+
+	newpassword, err := i.helper.PasswordHashing(password)
+	if err != nil {
+		return errors.New("error in hashing password")
+	}
+
+	return i.userRepo.ChangePassword(id, string(newpassword))
+
+}
+
+func (u *userUseCase) ForgotPasswordSend(phone string) error {
+
+	ok := u.otpRepository.FindUserByMobileNumber(phone)
+	if !ok {
+		return errors.New("the user does not exist")
+	}
+
+	u.helper.TwilioSetup(u.cfg.ACCOUNTSID, u.cfg.AUTHTOKEN)
+	_, err := u.helper.TwilioSendOTP(phone, u.cfg.SERVICEID)
+	if err != nil {
+		return errors.New("error ocurred while generating OTP")
+	}
+
+	return nil
+
+}
+
+func (u *userUseCase) ForgotPasswordVerifyAndChange(model models.ForgotVerify) error {
+	u.helper.TwilioSetup(u.cfg.ACCOUNTSID, u.cfg.AUTHTOKEN)
+	err := u.helper.TwilioVerifyOTP(u.cfg.SERVICEID, model.Otp, model.Phone)
+	if err != nil {
+		return errors.New("error while verifying")
+	}
+
+	id, err := u.userRepo.FindIdFromPhone(model.Phone)
+	if err != nil {
+		return errors.New("cannot find user from mobile number")
+	}
+
+	newpassword, err := u.helper.PasswordHashing(model.NewPassword)
+	if err != nil {
+		return errors.New("error in hashing password")
+	}
+
+	// if user is authenticated then change the password i the database
+	if err := u.userRepo.ChangePassword(id, string(newpassword)); err != nil {
+		return errors.New("could not change password")
+	}
+
 	return nil
 }
-func (usrU *userUsecase)GetAddresses(id int )([]domain.Address,error){
-	addresses,err := usrU.userRepo.GetAddresses(id)
-	if err !=nil{
-		return []domain.Address{},err
-	}
-	return addresses,nil
-}
 
-func( usrU *userUsecase)GetUserDetails(id int)(models.UserResponse,error){
-	userDetails,err :=usrU.userRepo.GetUserDetails(id)
-	if err !=nil{
-		return models.UserResponse{},err
-	}
-	return userDetails,nil
-}
-func (usrU *userUsecase)ChangePassword(id int ,old string,password string,repassword string)error{
-	userPass,err :=usrU.userRepo.GetPassword(id)
-	if err !=nil{
-		return errors.New("couldn't get user password")
-	}
-	if err :=bcrypt.CompareHashAndPassword([]byte(userPass),[]byte(old));err !=nil{
-		return errors.New("password is incorrect ")
+func (i *userUseCase) EditName(id int, name string) error {
 
+	err := i.userRepo.EditName(id, name)
+	if err != nil {
+		return errors.New("could not change")
 	}
-	if password !=repassword{
-		return errors.New("password not matching")
-	}
-	newPass ,err :=bcrypt.GenerateFromPassword([]byte (password),10)
-	if err !=nil{
-		return err
-	}
-	return usrU.userRepo.ChangePassword(id, string(newPass))
-}
-func(usrU *userUsecase) GetCartID(userID int)(int,error){
-	cartId,err :=usrU.userRepo.GetCartID(userID)
-	if err !=nil{
-		return 0,errors.New("couldn't get cart id")
-	}
-	return cartId,nil
-}
-func(usrU *userUsecase) EditUser(id int ,userData models.EditUser)error{
 
-	if userData.Name!= "" && userData.Name !="string"{
-		err :=usrU.userRepo.EditName(id,userData.Name)
-		if err !=nil{
-			return err
-		}
-	}
-	if userData.Email!= "" &&userData.Email!="string"{
-		err :=usrU.userRepo.EditEmail(id,userData.Email)
-		if err != nil{
-			return err
-		}
-	}
-	if userData.Phone != "" && userData.Phone != "string"{
-		err := usrU.userRepo.EditPhone(id,userData.Phone)
-		if err !=nil{
-			return err
-		}
-	}
-	if userData.Username!= "" && userData.Username!= "string"{
-		err := usrU.userRepo.EditUsername(id,userData.Username)
-		if err !=nil{
-			return err
-		}
-	}
 	return nil
+
 }
-func (usrU *userUsecase)GetCart(id ,page,limit int) ([]models.GetCart,error)  {
+
+func (i *userUseCase) EditEmail(id int, email string) error {
+
+	err := i.userRepo.EditEmail(id, email)
+	if err != nil {
+		return errors.New("could not change")
+	}
+
+	return nil
+
+}
+
+func (i *userUseCase) EditPhone(id int, phone string) error {
+
+	err := i.userRepo.EditPhone(id, phone)
+	if err != nil {
+		return errors.New("could not change")
+	}
+
+	return nil
+
+}
+
+func (u *userUseCase) GetCart(id int) (models.GetCartResponse, error) {
+
 	//find cart id
-	cartId,err :=usrU.GetCartID(id)
-	if err !=nil{
-		return []models.GetCart{},errors.New("could't find cart id")
+	cart_id, err := u.userRepo.GetCartID(id)
+	if err != nil {
+		return models.GetCartResponse{}, errors.New(InternalError)
 	}
-	//find products inside cart
-	products,err :=usrU.userRepo.GetProductsInCart(cartId,page,limit)
-	if err !=nil{
-		return []models.GetCart{},errors.New("couldn't find products in cart")
+	//find products inide cart
+	products, err := u.userRepo.GetProductsInCart(cart_id)
+	if err != nil {
+		return models.GetCartResponse{}, errors.New(InternalError)
 	}
-	//find products name
-
-	var productsName []string
-	for i :=range products{
-		prdName,err :=usrU.userRepo.FindProductNames(products[i])
-
-		if err !=nil{
-			return []models.GetCart{},err
+	//find product names
+	var product_names []string
+	for i := range products {
+		product_name, err := u.userRepo.FindProductNames(products[i])
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
 		}
-		productsName =append(productsName, prdName)
+		product_names = append(product_names, product_name)
 	}
+
 	//find quantity
-	var productQuantity []int
-
-	for q := range products{
-		prdQ,err := usrU.userRepo.FindCartQuantity(cartId,products[q])
-		if err !=nil{
-			return []models.GetCart{},err
-
+	var quantity []int
+	for i := range products {
+		q, err := u.userRepo.FindCartQuantity(cart_id, products[i])
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
 		}
-		productQuantity =append(productQuantity, prdQ)
-
+		quantity = append(quantity, q)
 	}
-	//find price of the product
-	var productPrice []float64
 
-	for p :=range products{
-		prdP,err :=usrU.userRepo.FindPrice(products[p])
-		if err !=nil{
-			return []models.GetCart{},err
+	var price []float64
+	for i := range products {
+		q, err := u.userRepo.FindPrice(products[i])
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
 		}
-		productPrice =append(productPrice, prdP)
+		price = append(price, q)
 	}
 
-//find category 
-var productCategory []int
-for c := range products{
-	prdC ,err :=usrU.userRepo.FindCategory(products[c])
-	if err !=nil{
-		return []models.GetCart{},err
+	var images []string
+	var stocks []int
 
+	for _, v := range products {
+		image, err := u.userRepo.FindProductImage(v)
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
+		}
+
+		stock, err := u.userRepo.FindStock(v)
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
+		}
+
+		images = append(images, image)
+		stocks = append(stocks, stock)
 	}
-	productCategory=append(productCategory, prdC)
-}
-var getCart []models.GetCart
-for i :=range products {
-	var get models.GetCart
-	get.ProductName =productsName[i]
-	get.Category_id =productCategory[i]
-	get.Quantity=productCategory[i]
-	get .Total=productPrice[i]
-	getCart =append(getCart, get)
-}
-//find offers 
 
-var offers []int
-
-for i := range productCategory{
-	c ,err :=usrU.offerRepo.FindDiscountPercentage(productCategory[i])
-	if err !=nil{
-		return []models.GetCart{},err
+	var categories []int
+	for i := range products {
+		c, err := u.userRepo.FindCategory(products[i])
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
+		}
+		categories = append(categories, c)
 	}
-	offers =append(offers, c)
-}
-//find discount price
-for i :=range getCart{
-	getCart[i].DiscountPrice =(getCart[i].Total) -(getCart[i].Total *float64(offers[i]/ 100))
-}
-return getCart,nil
 
-} 
-func(usrU *userUsecase)RemoveFromCart(id int,inventoryID int)error{
-	err :=usrU.userRepo.RemoveFromCart(id,inventoryID)
-	if err !=nil{
+	var getcart []models.GetCart
+	for i := range product_names {
+		var get models.GetCart
+		get.ID = products[i]
+		get.ProductName = product_names[i]
+		get.Image = images[i]
+		get.Category_id = categories[i]
+		get.Quantity = quantity[i]
+		get.Total = price[i]
+		get.StockAvailable = stocks[i]
+		get.DiscountedPrice = 0
+
+		getcart = append(getcart, get)
+	}
+
+	//find offers
+	var offers []int
+	for i := range categories {
+		c, err := u.userRepo.FindofferPercentage(categories[i])
+		if err != nil {
+			return models.GetCartResponse{}, errors.New(InternalError)
+		}
+		offers = append(offers, c)
+	}
+
+	//find discounted price
+	for i := range getcart {
+		getcart[i].DiscountedPrice = (getcart[i].Total) - (getcart[i].Total * float64(offers[i]) / 100)
+	}
+
+	var response models.GetCartResponse
+	response.ID = cart_id
+	response.Data = getcart
+
+	//then return in appropriate format
+
+	return response, nil
+
+}
+
+func (i *userUseCase) RemoveFromCart(cart, inventory int) error {
+
+	err := i.userRepo.RemoveFromCart(cart, inventory)
+	if err != nil {
 		return err
 	}
+
 	return nil
+
 }
-func(usrU *userUsecase)ClearCart(cartID int)error{
-	err :=usrU.userRepo.ClearCart(cartID)
-	if err !=nil{
+
+func (i *userUseCase) UpdateQuantityAdd(id, inv int) error {
+
+	err := i.userRepo.UpdateQuantityAdd(id, inv)
+	if err != nil {
 		return err
 	}
+
 	return nil
+
 }
-func (usrU *userUsecase)UpdateQuantityLess(id,inv_id int)error{
-	if err :=usrU.userRepo.UpdateQuantityLess(id ,inv_id);err !=nil{
+
+func (i *userUseCase) UpdateQuantityLess(id, inv int) error {
+
+	err := i.userRepo.UpdateQuantityLess(id, inv)
+	if err != nil {
 		return err
 	}
+
 	return nil
-}
-func (usrU *userUsecase) UpdateQuantityAdd(id, inv_id int) error {
-	if err := usrU.userRepo.UpdateQuantityAdd(id, inv_id); err != nil {
-		return err
-	}
-	return nil
-}
-func (usrU *userUsecase) GetWallet(id,page,limit int)(models.Wallet,error){
-	//get wallet id
 
-	walletId,err :=usrU.walletRepo.FindWalletIdFromUserId(id)
-	if err !=nil{
-		return models.Wallet{},errors.New("couldn't find the wallet id from user id")
-
-	}
-	//get wallet balance
-	balance ,err :=usrU.walletRepo.GetBalance(walletId)
-	if err !=nil{
-		return models.Wallet{},errors.New("couldn't find the wallet balance")
-	}
-	//get wallet history (history with amount,purpose,time, walletId)
-	history,err :=usrU.walletRepo.GetHistory(walletId,page,limit)
-	if err !=nil{
-		return models.Wallet{},errors.New("couldn't find wallet history")
-
-	}
-	var wallet models.Wallet
-	wallet.Balance=balance
-	wallet.History =history
-	return wallet,nil
 }
 
+// func (i *userUseCase) GetMyReferenceLink(id int) (string, error) {
 
+// 	baseURL := "jerseyhub.com/users/signup"
+
+// 	referralCode, err := i.userRepo.GetReferralCodeFromID(id)
+// 	if err != nil {
+// 		return "", errors.New("error getting ref code")
+// 	}
+
+// 	referralLink := fmt.Sprintf("%s?ref=%s", baseURL, referralCode)
+
+// 	//returning the link
+// 	return referralLink, nil
+// }

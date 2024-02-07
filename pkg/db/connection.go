@@ -1,8 +1,8 @@
 package db
 
 import (
-	"ecommerce/pkg/config"
-	"ecommerce/pkg/domain"
+	config "ecommerce/pkg/config"
+	domain "ecommerce/pkg/domain"
 	"fmt"
 
 	"gorm.io/driver/postgres"
@@ -16,10 +16,10 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		SkipDefaultTransaction: true,
 	})
 
-	db.AutoMigrate(&domain.Inventory{})
+	db.AutoMigrate(&domain.Inventories{})
 	db.AutoMigrate(&domain.Category{})
 	db.AutoMigrate(&domain.Admin{})
-	db.AutoMigrate(&domain.User{})
+	db.AutoMigrate(&domain.Users{})
 	db.AutoMigrate(&domain.Cart{})
 	db.AutoMigrate(&domain.Wishlist{})
 	db.AutoMigrate(&domain.WishlistItems{})
@@ -29,7 +29,7 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 	db.AutoMigrate(&domain.LineItems{})
 	db.AutoMigrate(&domain.PaymentMethod{})
 	db.AutoMigrate(&domain.Offer{})
-	db.AutoMigrate(&domain.Coupon{})
+	db.AutoMigrate(&domain.Coupons{})
 	db.AutoMigrate(&domain.Wallet{})
 	db.AutoMigrate(&domain.WalletHistory{})
 	db.AutoMigrate(&domain.Image{})

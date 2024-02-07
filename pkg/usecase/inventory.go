@@ -1,136 +1,221 @@
 package usecase
 
 import (
-	"ecommerce/pkg/helper"
+	helper_interface "ecommerce/pkg/helper/interfaces"
 	"ecommerce/pkg/repository/interfaces"
-	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
+	"fmt"
 	"mime/multipart"
-	"strconv"
 )
 
-type inventoryUsecase struct {
-	invRepo interfaces.InventoryRespository
+type inventoryUseCase struct {
+	repository         interfaces.InventoryRepository
+	offerRepository    interfaces.OfferRepository
+	helper             helper_interface.Helper
+	wishlistRepository interfaces.WishlistRepository
 }
 
-// constructor function
-func NewInventoryUsecase(invRepo interfaces.InventoryRespository) services.InventoryUsecase {
-	return &inventoryUsecase{
-		invRepo: invRepo,
+func NewInventoryUseCase(repo interfaces.InventoryRepository, offer interfaces.OfferRepository, h helper_interface.Helper, w interfaces.WishlistRepository) *inventoryUseCase {
+	return &inventoryUseCase{
+		repository:         repo,
+		offerRepository:    offer,
+		helper:             h,
+		wishlistRepository: w,
 	}
 }
 
-func (invU *inventoryUsecase) AddInventory(inventory models.Inventory, image *multipart.FileHeader) (models.InventoryResponse, error) {
-	url, err := helper.AddImageToS3(image)
+func (i *inventoryUseCase) AddInventory(inventory models.AddInventories, image *multipart.FileHeader) (models.InventoryResponse, error) {
+
+	url, err := i.helper.AddImageToS3(image)
 	if err != nil {
 		return models.InventoryResponse{}, err
 	}
-	inventory.Image = url
 
-	// Send the url and save in db
-	inventoryResponse, err := invU.invRepo.AddInventory(inventory, url)
+	//send the url and save it in database
+	InventoryResponse, err := i.repository.AddInventory(inventory, url)
 	if err != nil {
 		return models.InventoryResponse{}, err
 	}
-	return inventoryResponse, nil
+
+	return InventoryResponse, nil
+
 }
 
-func (invU *inventoryUsecase) UpdateImage(invID int, image *multipart.FileHeader) (models.Inventory, error) {
-	url, err := helper.AddImageToS3(image)
+func (i *inventoryUseCase) UpdateInventory(pid int, stock int) (models.InventoryResponse, error) {
+
+	result, err := i.repository.CheckInventory(pid)
 	if err != nil {
-		return models.Inventory{}, err
+
+		return models.InventoryResponse{}, err
 	}
 
-	inventoryResponse, err := invU.invRepo.UpdateImage(invID, url)
-	if err != nil {
-		return models.Inventory{}, err
-	}
-	return inventoryResponse, nil
-}
-
-func (invU *inventoryUsecase) UpdateInventory(invID int, invData models.UpdateInventory) (models.Inventory, error) {
-	result, err := invU.invRepo.CheckInventory(invID)
-	if err != nil {
-		return models.Inventory{}, err
-	}
 	if !result {
-		return models.Inventory{}, errors.New("there is no inventory as you mentioned")
+		return models.InventoryResponse{}, errors.New("there is no inventory as you mentioned")
 	}
-	newinventory, err := invU.invRepo.UpdateInventory(invID, invData)
+
+	newcat, err := i.repository.UpdateInventory(pid, stock)
 	if err != nil {
-		return models.Inventory{}, err
+		return models.InventoryResponse{}, err
 	}
-	return newinventory, nil
+
+	return newcat, err
 }
 
-func (invU *inventoryUsecase) DeleteInventory(id string) error {
-	if err := invU.invRepo.DeleteInventory(id); err != nil {
+func (i *inventoryUseCase) DeleteInventory(inventoryID string) error {
+
+	err := i.repository.DeleteInventory(inventoryID)
+	if err != nil {
 		return err
 	}
 	return nil
+
 }
 
-func (invU *inventoryUsecase) ShowIndividualProducts(id string) (models.InventoryDetails, error) {
-	product, err := invU.invRepo.ShowIndividualProducts(id)
+func (i *inventoryUseCase) ShowIndividualProducts(id string) (models.Inventories, error) {
+
+	product, err := i.repository.ShowIndividualProducts(id)
 	if err != nil {
-		return models.InventoryDetails{}, err
+		return models.Inventories{}, err
 	}
-	productId, err := strconv.Atoi(id)
+
+	DiscountPercentage, err := i.offerRepository.FindDiscountPercentage(product.CategoryID)
 	if err != nil {
-		return models.InventoryDetails{}, err
+		return models.Inventories{}, err
 	}
-	var AdditionalImage []models.ImagesInfo
-	AdditionalImage, err = invU.invRepo.GetImagesFromInventoryId(productId)
-	if err != nil {
-		return models.InventoryDetails{}, err
+
+	//make discounted price by calculation
+	var discount float64
+	if DiscountPercentage > 0 {
+		discount = (product.Price * float64(DiscountPercentage)) / 100
 	}
-	InvDetails := models.InventoryDetails{Inventory: product, AdditionalImages: AdditionalImage}
-	return InvDetails, nil
+
+	product.DiscountedPrice = product.Price - discount
+
+	return product, nil
+
 }
 
-func (invU *inventoryUsecase) ListProducts(page int, limit int) ([]models.InventoryList, error) {
-	productDetails, err := invU.invRepo.ListProducts(page, limit)
+func (i *inventoryUseCase) ListProductsForUser(page, userID int) ([]models.Inventories, error) {
 
+	productDetails, err := i.repository.ListProducts(page)
 	if err != nil {
-		return []models.InventoryList{}, err
+		return []models.Inventories{}, err
 	}
+
+	fmt.Println("product details is:", productDetails)
+
+	//loop inside products and then calculate discounted price of each then return
+	for j := range productDetails {
+		discount_percentage, err := i.offerRepository.FindDiscountPercentage(productDetails[j].CategoryID)
+		if err != nil {
+			return []models.Inventories{}, errors.New("there was some error in finding the discounted prices")
+		}
+		var discount float64
+
+		if discount_percentage > 0 {
+			discount = (productDetails[j].Price * float64(discount_percentage)) / 100
+		}
+
+		productDetails[j].DiscountedPrice = productDetails[j].Price - discount
+
+		productDetails[j].IfPresentAtWishlist, err = i.wishlistRepository.CheckIfTheItemIsPresentAtWishlist(userID, int(productDetails[j].ID))
+		if err != nil {
+			return []models.Inventories{}, errors.New("error while checking ")
+		}
+
+		productDetails[j].IfPresentAtCart, err = i.wishlistRepository.CheckIfTheItemIsPresentAtCart(userID, int(productDetails[j].ID))
+		if err != nil {
+			return []models.Inventories{}, errors.New("error while checking ")
+		}
+
+	}
+
 	return productDetails, nil
+
 }
 
-func (invU *inventoryUsecase) SearchProducts(key string, page, limit int) ([]models.InventoryList, error) {
-	productsDetails, err := invU.invRepo.SearchProducts(key, page, limit)
+func (i *inventoryUseCase) ListProductsForAdmin(page int) ([]models.Inventories, error) {
+
+	productDetails, err := i.repository.ListProducts(page)
 	if err != nil {
-		return []models.InventoryList{}, err
+		return []models.Inventories{}, err
 	}
-	return productsDetails, nil
+
+	fmt.Println("product details is:", productDetails)
+
+	//loop inside products and then calculate discounted price of each then return
+	for j := range productDetails {
+		discount_percentage, err := i.offerRepository.FindDiscountPercentage(productDetails[j].CategoryID)
+		if err != nil {
+			return []models.Inventories{}, errors.New("there was some error in finding the discounted prices")
+		}
+		var discount float64
+
+		if discount_percentage > 0 {
+			discount = (productDetails[j].Price * float64(discount_percentage)) / 100
+		}
+
+		productDetails[j].DiscountedPrice = productDetails[j].Price - discount
+
+	}
+
+	return productDetails, nil
+
 }
 
-func (invU *inventoryUsecase) GetCategoryProducts(catID int, page, limit int) ([]models.InventoryList, error) {
-	productsDetails, err := invU.invRepo.GetCategoryProducts(catID, page, limit)
+func (i *inventoryUseCase) SearchProducts(key string) ([]models.Inventories, error) {
+
+	productDetails, err := i.repository.SearchProducts(key)
 	if err != nil {
-		return []models.InventoryList{}, err
+		return []models.Inventories{}, err
 	}
-	return productsDetails, nil
+
+	//loop inside products and then calculate discounted price of each then return
+	for j := range productDetails {
+		discount_percentage, err := i.offerRepository.FindDiscountPercentage(productDetails[j].CategoryID)
+		if err != nil {
+			return []models.Inventories{}, errors.New("there was some error in finding the discounted prices")
+		}
+		var discount float64
+
+		if discount_percentage > 0 {
+			discount = (productDetails[j].Price * float64(discount_percentage)) / 100
+		}
+
+		productDetails[j].DiscountedPrice = productDetails[j].Price - discount
+
+	}
+
+	return productDetails, nil
+
 }
 
-func (invU *inventoryUsecase) AddImage(product_id int, image *multipart.FileHeader) (models.InventoryResponse, error) {
-	// adding the image to Aws s3 bucket
-	imageUrl, err := helper.AddImageToS3(image)
-	if err!=nil{
-		return models.InventoryResponse{},err
-	}
+func (i *inventoryUseCase) UpdateProductImage(id int, file *multipart.FileHeader) error {
 
-	inventoryResponse, err := invU.invRepo.AddImage(product_id, imageUrl)
+	url, err := i.helper.AddImageToS3(file)
 	if err != nil {
-		return models.InventoryResponse{}, err
+		return err
 	}
-	return inventoryResponse, nil
-}
 
-func (invU *inventoryUsecase) DeleteImage(product_id, image_id int) error {
-	if err := invU.invRepo.DeleteImage(product_id, image_id); err != nil {
-		return errors.New("image not deleted")
+	//send the url and save it in database
+	err = i.repository.UpdateProductImage(id, url)
+	if err != nil {
+		return err
 	}
+
 	return nil
+
+}
+
+func (i *inventoryUseCase) EditInventoryDetails(id int, model models.EditInventoryDetails) error {
+
+	//send the url and save it in database
+	err := i.repository.EditInventoryDetails(id, model)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

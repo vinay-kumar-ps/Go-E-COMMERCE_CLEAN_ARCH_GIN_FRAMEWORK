@@ -1,11 +1,15 @@
 package interfaces
 
-import "ecommerce/pkg/domain"
+import (
+	"ecommerce/pkg/domain"
+	"ecommerce/pkg/utils/models"
+)
 
-type CategoryUsecase interface{
-	AddCategory (category string) (domain.Category,error)
-	UpdateCategory (current ,new string)(domain.Category,error)
-	DeleteCategory(CategoryId string)error
-	GetCategories(page ,limit int) ([]domain.Category,error)
-	
+type CategoryUseCase interface {
+	AddCategory(category domain.Category) (domain.Category, error)
+	UpdateCategory(current string, new string) (domain.Category, error)
+	DeleteCategory(categoryID string) error
+	GetCategories() ([]domain.Category, error)
+	GetProductDetailsInACategory(id int) ([]models.Inventories, error)
+	GetBannersForUsers() ([]models.Banner, error)
 }

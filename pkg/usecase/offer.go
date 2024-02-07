@@ -1,42 +1,43 @@
 package usecase
 
 import (
-	"ecommerce/pkg/domain"
+	domain "ecommerce/pkg/domain"
 	interfaces "ecommerce/pkg/repository/interfaces"
-	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
-	"errors"
 )
 
-type offerUsecse struct{
-	offerRepo interfaces.OfferRepository
-
-
+type offerUseCase struct {
+	repository interfaces.OfferRepository
 }
-//constructor function
 
-func NewOfferUsecase(offerRepo interfaces.OfferRepository) services.OfferUsecase{
-	return &offerUsecse{
-		offerRepo:offerRepo,
+func NewOfferUseCase(repo interfaces.OfferRepository) *offerUseCase {
+	return &offerUseCase{
+		repository: repo,
 	}
 }
-func (offU *offerUsecse)AddNewOffer(model models.CreateOffer)error{
-	if err := offU.offerRepo.AddNewOffer(model);err!=nil{
-		return errors.New("adding offer failed")
-	}
-	return nil
-}
-func(offU *offerUsecse)MakeOfferExpire(catID int )error{
-	if err :=offU.offerRepo.MakeOfferExpired(catID);err!=nil{
+
+func (off *offerUseCase) AddNewOffer(model models.OfferMaking) error {
+	if err := off.repository.AddNewOffer(model); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (offU *offerUsecse) GetOffers(page, limit int) ([]domain.Offer, error) {
-	offers, err := offU.offerRepo.GetOffers(page, limit)
+func (off *offerUseCase) MakeOfferExpire(id int) error {
+	if err := off.repository.MakeOfferExpire(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *offerUseCase) GetOffers() ([]domain.Offer, error) {
+
+	offers, err := o.repository.GetOffers()
 	if err != nil {
 		return []domain.Offer{}, err
 	}
 	return offers, nil
+
 }

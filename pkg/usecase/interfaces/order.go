@@ -5,17 +5,14 @@ import (
 	"ecommerce/pkg/utils/models"
 )
 
-type OrderUsecase interface{
-	GetOrders(id, page ,limit int) ([]domain.Order,error)
-	OrderItemsFromCart(userId int, order models.Order,coupon string)(string,error)
-	CancelOrder(id ,orderId int)error
-	EditOrderStatus(status string,id int)error
-	MarkAsPaid(orderId int )error
-	AdminOrders(page,limit int, status string)([]domain.OrderDetails,error)
-	DailyOrders()(domain.SalesReport,error)
-	WeeklyOrders()(domain.SalesReport,error)
-	MonthlyOrders()(domain.SalesReport,error)
-	AnnualOrders()(domain.SalesReport,error)
-	CustomDateOrders(dates models.CustomDates)(domain.SalesReport,error)
-	ReturnOrder(id int )error
+
+type OrderUseCase interface {
+	GetOrders(id int) ([]domain.OrderDetailsWithImages, error)
+	OrderItemsFromCart(userid int, addressid int, paymentid int, couponID int) error
+	CancelOrder(id int) error
+	EditOrderStatus(status string, id int) error
+	AdminOrders() (domain.AdminOrdersResponse, error)
+	ReturnOrder(id int) error
+	MakePaymentStatusAsPaid(id int) error
+	GetIndividualOrderDetails(id int) (models.IndividualOrderDetails, error)
 }

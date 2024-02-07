@@ -1,172 +1,225 @@
 package helper
 
 import (
-
 	"context"
+	"crypto/rand"
+	"encoding/base32"
 	"errors"
 	"fmt"
 	"mime/multipart"
-	"strconv"
+	"time"
 
-	"ecommerce/pkg/domain"
 	"ecommerce/pkg/utils/models"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/spf13/viper"
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/verify/v2"
 	"golang.org/x/crypto/bcrypt"
-	
+	 "golang.org/x/tools/go/cfg"
 )
 
-func GetUserId(c *gin.Context) (int, error) {
-	var key models.UserKey = "user_id"
-	val := c.Request.Context().Value(key)
-
-	// Check if the value is not nil
-	if val == nil {
-		return 0, errors.New("user id not found in context")
-	}
-	// using type assertion to chech the type of val is models.UserKey
-
-	userkey, ok := val.(models.UserKey)
-	if !ok {
-		return 0, errors.New("user id type is not expected type")
-	}
-	id := userkey.String()
-	userId, err := strconv.Atoi(id)
-	if err != nil {
-		return 0, errors.New("failed to convert user id to int")
-	}
-	return userId, nil
+type helper struct {
+	cfg cfg.Config
 }
 
-func GenerateAdminToken(admin domain.Admin) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":    admin.ID,
-		"admin": admin.Username,
-		"email": admin.Email,
-
-		"role": "admin",
-	})
-	tokenString, err := token.SignedString([]byte(viper.GetString("KEY")))
-	if err != nil {
-		return "", err
+func NewHelper(config cfg.Config) *helper {
+	return &helper{
+		cfg: config,
 	}
-	return tokenString, nil
 }
 
-func GenerateUserToken(user models.UserResponse) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user":   user.Username,
-		"role":   "user",
-		"userId": user.Id,
-	})
-	tokenString, err := token.SignedString([]byte(viper.GetString("KEY")))
-	if err == nil {
-		fmt.Println("token created")
-	}
-	return tokenString, nil
-}
-
-func PasswordHashing(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
-	if err != nil {
-		return "", errors.New("internal server error")
-	}
-	hash := string(hashedPassword)
-	return hash, nil
-}
-
-// This function will setup the twilio
 var client *twilio.RestClient
 
-func TwilioSetup(username string, password string) {
-	client = twilio.NewRestClientWithParams(twilio.ClientParams{
-		Username: username,
-		Password: password,
-	})
+type AuthCustomClaims struct {
+	Id    int    `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+	jwt.StandardClaims
 }
 
-func TwilioSendOTP(phone string, serviceId string) (string, error) {
-	to := "+91" + phone
-	params := &twilioApi.CreateVerificationParams{}
-	params.SetTo(to)
-	params.SetChannel("sms")
-	resp, err := client.VerifyV2.CreateVerification(serviceId, params)
+func (helper *helper) GenerateTokenAdmin(admin models.AdminDetailsResponse) (string, string, error) {
+	accessTokenClaims := &AuthCustomClaims{
+		Id:    admin.ID,
+		Email: admin.Email,
+		Role:  "admin",
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Minute * 20).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
 
+	refreshTokenClaims := &AuthCustomClaims{
+		Id:    admin.ID,
+		Email: admin.Email,
+		Role:  "admin",
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 30).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
+	accessTokenString, err := accessToken.SignedString([]byte("accesssecret"))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return *resp.Sid, nil
-}
 
-func TwilioVerifyOTP(serviceId string, code string, phone string) error {
-	params := &twilioApi.CreateVerificationCheckParams{}
-	params.SetTo("+91" + phone)
-	params.SetCode(code)
-
-	resp, err := client.VerifyV2.CreateVerificationCheck(serviceId, params)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
+	refreshTokenString, err := refreshToken.SignedString([]byte("refreshsecret"))
 	if err != nil {
-		return err
+		return "", "", err
 	}
-	if *resp.Status == "approved" {
-		return nil
-	}
-	return errors.New("otp verification failed")
+
+	return accessTokenString, refreshTokenString, nil
 }
 
-func FindMostBroughtProduct(products []domain.ProductReport) []int {
-	productMap := make(map[int]int)
+func (h *helper) AddImageToS3(file *multipart.FileHeader) (string, error) {
 
-	for _, item := range products {
-		productMap[item.InventoryID] += item.Quantity
-	}
-	maxQty := 0
-	for _, item := range productMap {
-		if item > maxQty {
-			maxQty = item
-		}
-	}
-	var bestSeller []int
-	for k, item := range productMap {
-		if item == maxQty {
-			bestSeller = append(bestSeller, k)
-		}
-	}
-	return bestSeller
-}
-
-func AddImageToS3(file *multipart.FileHeader) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-south-1"))
 	if err != nil {
-		fmt.Println("configuration error: ", err)
+		fmt.Println("configuration error:", err)
 		return "", err
 	}
+
 	client := s3.NewFromConfig(cfg)
+
 	uploader := manager.NewUploader(client)
+
 	f, openErr := file.Open()
 	if openErr != nil {
-		fmt.Println("file open error: ", openErr)
+		fmt.Println("opening error:", openErr)
 		return "", openErr
 	}
 	defer f.Close()
 
 	result, uploadErr := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String("samplebucket"),
+		Bucket: aws.String("jerseyhub"),
 		Key:    aws.String(file.Filename),
 		Body:   f,
 		ACL:    "public-read",
 	})
+
 	if uploadErr != nil {
-		fmt.Println("upload error : ", uploadErr)
+		fmt.Println("uploading error:", uploadErr)
 		return "", uploadErr
 	}
+
 	return result.Location, nil
 }
-//
+
+func (h *helper) TwilioSetup(username string, password string) {
+	client = twilio.NewRestClientWithParams(twilio.ClientParams{
+		Username: username,
+		Password: password,
+	})
+
+}
+
+func (h *helper) TwilioSendOTP(phone string, serviceID string) (string, error) {
+	to := "+91" + phone
+	params := &twilioApi.CreateVerificationParams{}
+	params.SetTo(to)
+	params.SetChannel("sms")
+
+	resp, err := client.VerifyV2.CreateVerification(serviceID, params)
+	if err != nil {
+
+		return " ", err
+	}
+
+	return *resp.Sid, nil
+
+}
+
+func (h *helper) TwilioVerifyOTP(serviceID string, code string, phone string) error {
+
+	params := &twilioApi.CreateVerificationCheckParams{}
+	params.SetTo("+91" + phone)
+	params.SetCode(code)
+	resp, err := client.VerifyV2.CreateVerificationCheck(serviceID, params)
+
+	if err != nil {
+		return err
+	}
+
+	if *resp.Status == "approved" {
+		return nil
+	}
+
+	return errors.New("failed to validate otp")
+
+}
+
+func (h *helper) GenerateTokenClients(user models.UserDetailsResponse) (string, error) {
+	claims := &AuthCustomClaims{
+		Id:    user.Id,
+		Email: user.Email,
+		Role:  "client",
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 48).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("comebuyjersey"))
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (h *helper) GenerateRefferalCode() (string, error) {
+	// Calculate the required number of random bytes
+	byteLength := (5 * 5) / 8
+
+	// Generate a random byte array
+	randomBytes := make([]byte, byteLength)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+
+	// Encode the random bytes to base32
+	encoder := base32.NewEncoding("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567").WithPadding(base32.NoPadding)
+	encoded := encoder.EncodeToString(randomBytes)
+
+	// Trim any additional characters to match the desired length
+	encoded = encoded[:5]
+
+	return encoded, nil
+}
+
+func (h *helper) PasswordHashing(password string) (string, error) {
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return "", errors.New("internal server error")
+	}
+
+	hash := string(hashedPassword)
+	return hash, nil
+}
+
+func (h *helper) CompareHashAndPassword(a string, b string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(a), []byte(b))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *helper) Copy(a *models.UserDetailsResponse, b *models.UserSignInResponse) (models.UserDetailsResponse, error) {
+	err := copier.Copy(a, b)
+	if err != nil {
+		return models.UserDetailsResponse{}, err
+	}
+
+	return *a, nil
+}

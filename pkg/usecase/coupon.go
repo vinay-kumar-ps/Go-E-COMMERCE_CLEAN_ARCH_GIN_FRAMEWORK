@@ -3,40 +3,49 @@ package usecase
 import (
 	"ecommerce/pkg/domain"
 	interfaces "ecommerce/pkg/repository/interfaces"
-	services "ecommerce/pkg/usecase/interfaces"
-	"errors"
+	"ecommerce/pkg/utils/models"
 )
 
-type couponUsecase struct {
-	couponRepo interfaces.CouponRepository
+type couponUseCase struct {
+	repository interfaces.CouponRepository
 }
 
-// constructor function
-
-func NewCouponUsecase(couponRepo interfaces.CouponRepository) services.CouponUsecase {
-	return &couponUsecase{
-		couponRepo: couponRepo,
+func NewCouponUseCase(repo interfaces.CouponRepository) *couponUseCase {
+	return &couponUseCase{
+		repository: repo,
 	}
 }
 
-func (coupU *couponUsecase) AddCoupon(coupon domain.Coupon) error {
-	if err := coupU.couponRepo.AddCoupon(coupon); err != nil {
-		return errors.New("coupon adding failed")
-	}
-	return nil
-}
-
-func (coupU *couponUsecase) MakeCouponInvalid(id int) error {
-	if err := coupU.couponRepo.MakeCouponInvalid(id); err != nil {
+func (coup *couponUseCase) AddCoupon(coupon models.Coupons) error {
+	if err := coup.repository.AddCoupon(coupon); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (coupU *couponUsecase) GetCoupons(page, limit int) ([]domain.Coupon, error) {
-	coupons, err := coupU.couponRepo.GetCoupons(page, limit)
+func (coup *couponUseCase) MakeCouponInvalid(id int) error {
+	if err := coup.repository.MakeCouponInvalid(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (coup *couponUseCase) ReActivateCoupon(id int) error {
+	if err := coup.repository.ReActivateCoupon(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (Cat *couponUseCase) GetAllCoupons() ([]domain.Coupons, error) {
+
+	coupons, err := Cat.repository.GetAllCoupons()
 	if err != nil {
-		return []domain.Coupon{}, err
+		return []domain.Coupons{}, err
 	}
 	return coupons, nil
+
 }

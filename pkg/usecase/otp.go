@@ -2,7 +2,7 @@ package usecase
 
 import (
 	config "ecommerce/pkg/config"
-	helper_interfaces "ecommerce/pkg/helper/interfaces"
+	helper_interfaces "ecommerce/pkg/helper/interface"
 	interfaces "ecommerce/pkg/repository/interfaces"
 	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
@@ -33,7 +33,7 @@ func (ot *otpUseCase) SendOTP(phone string) error {
 	}
 
 	ot.helper.TwilioSetup(ot.cfg.ACCOUNTSID, ot.cfg.AUTHTOKEN)
-	_, err := ot.helper.TwilioSendOTP(phone, ot.cfg.SERVICEID)
+	_, err := ot.helper.TwilioSendOTP(phone, ot.cfg.SERVICESID)
 	if err != nil {
 		return errors.New("error ocurred while generating OTP")
 	}
@@ -45,7 +45,7 @@ func (ot *otpUseCase) SendOTP(phone string) error {
 func (ot *otpUseCase) VerifyOTP(code models.VerifyData) (models.TokenUsers, error) {
 
 	ot.helper.TwilioSetup(ot.cfg.ACCOUNTSID, ot.cfg.AUTHTOKEN)
-	err := ot.helper.TwilioVerifyOTP(ot.cfg.SERVICEID, code.Code, code.PhoneNumber)
+	err := ot.helper.TwilioVerifyOTP(ot.cfg.SERVICESID, code.Code, code.PhoneNumber)
 	if err != nil {
 		//this guard clause catches the error code runs only until here
 		return models.TokenUsers{}, errors.New("error while verifying")

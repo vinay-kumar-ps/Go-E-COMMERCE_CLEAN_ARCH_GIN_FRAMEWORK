@@ -4,12 +4,13 @@ import (
 	"errors"
 
 	domain "ecommerce/pkg/domain"
-	helper_interface "ecommerce/pkg/helper/interfaces"
+	helper_interface "ecommerce/pkg/helper/interface"
+
 	interfaces "ecommerce/pkg/repository/interfaces"
 	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
-	"github.com/jinzhu/copier"
 
+	"github.com/jinzhu/copier"
 
 	"golang.org/x/crypto/bcrypt"
 )

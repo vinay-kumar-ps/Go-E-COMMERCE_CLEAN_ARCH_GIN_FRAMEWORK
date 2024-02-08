@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	helper_interface "ecommerce/pkg/helper/interfaces"
+	helper_interface "ecommerce/pkg/helper/interface"
 	"ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"

@@ -16,10 +16,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/golang-jwt/jwt"
+	"github.com/jinzhu/copier"
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/verify/v2"
 	"golang.org/x/crypto/bcrypt"
-	 "golang.org/x/tools/go/cfg"
+	// "golang.org/x/tools/go/cfg"
+	 cfg "ecommerce/pkg/config"
 )
 
 type helper struct {

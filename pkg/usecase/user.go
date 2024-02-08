@@ -3,7 +3,7 @@ package usecase
 import (
 	config "ecommerce/pkg/config"
 	"ecommerce/pkg/domain"
-	helper_interface "ecommerce/pkg/helper/interfaces"
+	helper_interface "ecommerce/pkg/helper/interface"
 	interfaces "ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
@@ -210,7 +210,7 @@ func (u *userUseCase) ForgotPasswordSend(phone string) error {
 	}
 
 	u.helper.TwilioSetup(u.cfg.ACCOUNTSID, u.cfg.AUTHTOKEN)
-	_, err := u.helper.TwilioSendOTP(phone, u.cfg.SERVICEID)
+	_, err := u.helper.TwilioSendOTP(phone, u.cfg.SERVICESID)
 	if err != nil {
 		return errors.New("error ocurred while generating OTP")
 	}
@@ -221,7 +221,7 @@ func (u *userUseCase) ForgotPasswordSend(phone string) error {
 
 func (u *userUseCase) ForgotPasswordVerifyAndChange(model models.ForgotVerify) error {
 	u.helper.TwilioSetup(u.cfg.ACCOUNTSID, u.cfg.AUTHTOKEN)
-	err := u.helper.TwilioVerifyOTP(u.cfg.SERVICEID, model.Otp, model.Phone)
+	err := u.helper.TwilioVerifyOTP(u.cfg.SERVICESID, model.Otp, model.Phone)
 	if err != nil {
 		return errors.New("error while verifying")
 	}

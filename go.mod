@@ -8,15 +8,14 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.15.13
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-playground/validator/v10 v10.14.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jinzhu/copier v0.4.0
-	github.com/joho/godotenv v1.5.1
 	github.com/razorpay/razorpay-go v1.3.1
 	github.com/spf13/viper v1.18.2
 	github.com/twilio/twilio-go v1.16.1
 	github.com/unidoc/unipdf/v3 v3.53.0
 	golang.org/x/crypto v0.16.0
-	golang.org/x/tools v0.13.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
 )
@@ -45,7 +44,6 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/gorilla/i18n v0.0.0-20150820051429-8b358169da46 // indirect

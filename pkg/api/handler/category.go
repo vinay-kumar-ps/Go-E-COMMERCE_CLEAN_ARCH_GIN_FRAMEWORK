@@ -2,7 +2,7 @@ package handler
 
 import (
 	"ecommerce/pkg/domain"
-	services "ecommerce/pkg/usecase"
+	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"ecommerce/pkg/utils/response"
 	"net/http"
@@ -13,13 +13,14 @@ import (
 
 type CategoryHandler struct {
 	CategoryUseCase services.CategoryUseCase
-
 }
+
 func NewCategoryHandler(usecase services.CategoryUseCase) *CategoryHandler {
 	return &CategoryHandler{
 		CategoryUseCase: usecase,
 	}
 }
+
 // @Summary		Add Category
 // @Description	Admin can add new categories for products
 // @Tags			Admin
@@ -30,24 +31,27 @@ func NewCategoryHandler(usecase services.CategoryUseCase) *CategoryHandler {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/category [post]
+func (Cat *CategoryHandler) AddCategory(c *gin.Context) {
 
-func(Cat * CategoryHandler) AddCategory(c *gin.Context){
 	var category domain.Category
-	if err := c.BindJSON(&category);err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"fields provided are in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err := c.BindJSON(&category); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	categoryResponse ,err:= Cat.CategoryUseCase.AddCategory(category)
-	if err !=nil{
-		errorRes := response.ClientResponse(http.StatusBadRequest,"could not add the category",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+
+	CategoryResponse, err := Cat.CategoryUseCase.AddCategory(category)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not add the Category", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes :=response.ClientResponse(http.StatusOK,"successfully added category",categoryResponse,nil)
-	c.JSON(http.StatusOK,successRes)
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully added Category", CategoryResponse, nil)
+	c.JSON(http.StatusOK, successRes)
 
 }
+
 // @Summary		Update Category
 // @Description	Admin can update name of a category into new name
 // @Tags			Admin
@@ -58,23 +62,28 @@ func(Cat * CategoryHandler) AddCategory(c *gin.Context){
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/category [put]
+func (Cat *CategoryHandler) UpdateCategory(c *gin.Context) {
 
-func (Cat *CategoryHandler) UpdateCategory(c *gin.Context){
 	var p models.SetNewName
-	if err :=c.BindJSON(&p);err !=nil{
-		erroRes:=response.ClientResponse(http.StatusBadRequest,"fields provided in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
+
+	if err := c.BindJSON(&p); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	a,err :=Cat.CategoryUseCase.UpdateCategory(p.Current,p.New)
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"could not update the category ",nil,err.Error())
-	    c.JSON(http.StatusBadRequest,errorRes)
+
+	a, err := Cat.CategoryUseCase.UpdateCategory(p.Current, p.New)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not update the Category", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	succesRes :=response.ClientResponse(http.StatusOK,"successfulyy renamed the category",a,nil)
-	c.JSON(http.StatusOK,succesRes)
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully renamed the category", a, nil)
+	c.JSON(http.StatusOK, successRes)
+
 }
+
 // @Summary		Delete Category
 // @Description	Admin can delete a category
 // @Tags			Admin
@@ -85,52 +94,66 @@ func (Cat *CategoryHandler) UpdateCategory(c *gin.Context){
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/category [delete]
-func(Cat *CategoryHandler) DeleteCategory(c *gin.Context) {
-	categoryID :=c.Query("id")
-	err :=Cat.CategoryUseCase.DeleteCategory(categoryID)
-	if err !=nil{
-		errorRes:=response.ClientResponse(http.StatusBadRequest,"fields provided arein wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+func (Cat *CategoryHandler) DeleteCategory(c *gin.Context) {
+
+	categoryID := c.Query("id")
+	err := Cat.CategoryUseCase.DeleteCategory(categoryID)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	succesRes:=response.ClientResponse(http.StatusOK,"successfully deleted the category ",nil,nil)
-	c.JSON(http.StatusOK,succesRes)
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully deleted the Category", nil, nil)
+	c.JSON(http.StatusOK, successRes)
 
 }
-func(Cat *CategoryHandler)GetCategory(c *gin.Context){
-	categories,err :=Cat.CategoryUseCase.GetCategories()
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"fields rovided are in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
-		return
-	}
-	succesRes :=response.ClientResponse(http.StatusOK,"successfully got all categories ",categories,nil)
-	c.JSON(http.StatusOK,succesRes)
-}
-func(Cat *CategoryHandler) GetProductsDetailsInCategory(c *gin.Context){
-	id ,err:=strconv.Atoi(c.Query("id"))
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"feilds provided are in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
-		return
-	}
-	products,err :=Cat.CategoryUseCase.GetProductsDetailsInCategory(id)
-	if err !=nil{
-		erroRes :=response.ClientResponse(http.StatusInternalServerError,"error in fetcing data",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
-		return
-	}
-	successRes:=response.ClientResponse(http.StatusOK,"successfully got all categories",products,nil)
-	c.JSON(http.StatusOK,successRes)	
-}
-func (Cat *CategoryHandler)GetBannerForUsers (c *gin.Context){
 
-	banners,err :=Cat.CategoryUseCase.GetBannerForUsers()
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusInternalServerError,"error in fetching data",nil,err.error())
-		c.JSON(http.StatusBadRequest,errorRes)
+func (Cat *CategoryHandler) GetCategory(c *gin.Context) {
+
+	categories, err := Cat.CategoryUseCase.GetCategories()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes :=response.ClientResponse(http.StatusOK,"successfully got all banners",banners,nil)
-	c.JSON(http.StatusOK,successRes)
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all categories", categories, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+func (Cat *CategoryHandler) GetProductDetailsInACategory(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	products, err := Cat.CategoryUseCase.GetProductDetailsInACategory(id)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "error in fetching data", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all categories", products, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+func (Cat *CategoryHandler) GetBannersForUsers(c *gin.Context) {
+
+	banners, err := Cat.CategoryUseCase.GetBannersForUsers()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "error in fetching data", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all banners", banners, nil)
+	c.JSON(http.StatusOK, successRes)
+
 }

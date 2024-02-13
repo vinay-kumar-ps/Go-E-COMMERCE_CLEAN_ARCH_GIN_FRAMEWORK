@@ -71,7 +71,7 @@ func (Cat *CategoryHandler) UpdateCategory(c *gin.Context){
 	    c.JSON(http.StatusBadRequest,errorRes)
 		return
 	}
-	succesRes :=response.ClientResponse(http.StatusOK,"successfulyy renamed the category",a,ni)
+	succesRes :=response.ClientResponse(http.StatusOK,"successfulyy renamed the category",a,nil)
 	c.JSON(http.StatusOK,succesRes)
 }
 // @Summary		Delete Category
@@ -84,3 +84,14 @@ func (Cat *CategoryHandler) UpdateCategory(c *gin.Context){
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/category [delete]
+func(Cat *CategoryHandler) DeleteCategory(c *gin.Context) {
+	categoryID :=c.Query("id")
+	err :=Cat.CategoryUseCase.DeleteCategory(categoryID)
+	if err !=nil{
+		errorRes:=response.ClientResponse(http.StatusBadRequest,"fields provided arein wrong format",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	succesRes:=response.ClientResponse(http.StatusOK,"successfully deleted the category ",nil,nil)
+	c.JSON(http.StatusOK,succesRes)
+}

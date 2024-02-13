@@ -6,6 +6,7 @@ import (
 	"ecommerce/pkg/utils/models"
 	"ecommerce/pkg/utils/response"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -94,4 +95,42 @@ func(Cat *CategoryHandler) DeleteCategory(c *gin.Context) {
 	}
 	succesRes:=response.ClientResponse(http.StatusOK,"successfully deleted the category ",nil,nil)
 	c.JSON(http.StatusOK,succesRes)
+
+}
+func(Cat *CategoryHandler)GetCategory(c *gin.Context){
+	categories,err :=Cat.CategoryUseCase.GetCategories()
+	if err !=nil{
+		errorRes :=response.ClientResponse(http.StatusBadRequest,"fields rovided are in wrong format",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	succesRes :=response.ClientResponse(http.StatusOK,"successfully got all categories ",categories,nil)
+	c.JSON(http.StatusOK,succesRes)
+}
+func(Cat *CategoryHandler) GetProductsDetailsInCategory(c *gin.Context){
+	id ,err:=strconv.Atoi(c.Query("id"))
+	if err !=nil{
+		errorRes :=response.ClientResponse(http.StatusBadRequest,"feilds provided are in wrong format",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	products,err :=Cat.CategoryUseCase.GetProductsDetailsInCategory(id)
+	if err !=nil{
+		erroRes :=response.ClientResponse(http.StatusInternalServerError,"error in fetcing data",nil,err.Error())
+		c.JSON(http.StatusBadRequest,erroRes)
+		return
+	}
+	successRes:=response.ClientResponse(http.StatusOK,"successfully got all categories",products,nil)
+	c.JSON(http.StatusOK,successRes)	
+}
+func (Cat *CategoryHandler)GetBannerForUsers (c *gin.Context){
+
+	banners,err :=Cat.CategoryUseCase.GetBannerForUsers()
+	if err !=nil{
+		errorRes :=response.ClientResponse(http.StatusInternalServerError,"error in fetching data",nil,err.error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	successRes :=response.ClientResponse(http.StatusOK,"successfully got all banners",banners,nil)
+	c.JSON(http.StatusOK,successRes)
 }

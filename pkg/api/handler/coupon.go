@@ -1,15 +1,78 @@
 package handler
 
-import(
+import (
 	services "ecommerce/pkg/usecase/interfaces"
-	)
+	"ecommerce/pkg/utils/models"
+	"ecommerce/pkg/utils/response"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
 
 type CouponHandler struct {
-	uscase services.CouponUsecase
+	usecase services.CouponUsecase
 }
+
 func NewCouponHandler(use services.CouponUsecase) *CouponHandler {
 	return &CouponHandler{
-		uscase: use,
+		usecase: use,
 	}
 }
 
+// @Summary		Add Coupon
+// @Description	Admin can add new coupons
+// @Tags			Admin
+// @Accept			json
+// @Produce		    json
+// @Param			coupon	body	models.Coupons	true	"coupon"
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/coupons [post]
+
+func (coup *CouponHandler) CreateNewCoupon(c *gin.Context) {
+	var coupon models.Coupons
+	if err := c.BindJSON(&coupon); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in worng format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	err := coup.usecase.AddCoupon(coupon)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not add the coupon", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "successfully added coupon ", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+
+// @Summary		Make Coupon ad invalid
+// @Description	Admin can make the coupons as invalid so that users cannot use that particular coupon
+// @Tags			Admin
+// @Accept			json
+// @Produce		    json
+// @Param			id	query	string	true	"id"
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/coupons [delete]
+
+func(coup *CouponHandler) MakeCOuponInvalid(c *gin.Context){
+	id,err :=strconv.Atoi(c.Query("id"))
+	if err !=nil{
+		erroRes :=response.ClientResponse(http.StatusBadRequest,"fields provided are in worng format",nil,err.Error())
+		c.JSON(http.StatusBadRequest,erroRes)
+		return
+	}
+	if err :=coup.usecase.MakeCouponInvalid(id);err !=nil{
+		erroRes := response.ClientResponse(http.StatusBadRequest,"coupon cannot be made invalid",nil,err.Error())
+		c.JSON(http.StatusBadRequest,erroRes)
+		return
+	}
+	successRes:=response.ClientResponse(http.StatusOK,"successfully made coupon as invalid",nil,nil)
+	c.JSON(http.StatusOK,successRes)
+}

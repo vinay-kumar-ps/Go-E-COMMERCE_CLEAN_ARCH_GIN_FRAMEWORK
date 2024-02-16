@@ -75,4 +75,37 @@ func(coup *CouponHandler) MakeCOuponInvalid(c *gin.Context){
 	}
 	successRes:=response.ClientResponse(http.StatusOK,"successfully made coupon as invalid",nil,nil)
 	c.JSON(http.StatusOK,successRes)
+
+}
+func (coup *CouponHandler) ReActivateCoupon(c *gin.Context) {
+	id, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	if err := coup.usecase.ReActivateCoupon(id); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Coupon cannot be reactivated", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully made Coupon as invaid", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+func (co *CouponHandler) GetAllCoupons(c *gin.Context) {
+
+	categories, err := co.usecase.GetAllCoupons()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "error in getting coupons", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all coupons", categories, nil)
+	c.JSON(http.StatusOK, successRes)
+
 }

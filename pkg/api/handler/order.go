@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/razorpay/razorpay-go/resources"
 )
 
 type OrderHandler struct {
@@ -64,19 +63,20 @@ func (i *OrderHandler) GetOrders(c *gin.Context) {
 func (i *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 
 	var order models.Order
-	if err :=c.BindJSON(&order);err !=nil{
-		errorRes := response.ClientResponse(http.StatusBadRequest,"fields provided are in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err := c.BindJSON(&order); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	if err := i.OrderUseCase.OrderItemsFromCart(order.UserID,order.AddressID,order.PaymentMethodID,order.CouponID);err!=ni{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"could not make order ",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err := i.OrderUseCase.OrderItemsFromCart(order.UserID, order.AddressID, order.PaymentMethodID, order.CouponID); err != ni {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not make order ", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK,"successfully made th order",nil,nil )
-	c.JSON(http.StatusOK,successRes)
+	successRes := response.ClientResponse(http.StatusOK, "successfully made th order", nil, nil)
+	c.JSON(http.StatusOK, successRes)
 }
+
 // @Summary		Order Cancel
 // @Description	user can cancel the orders
 // @Tags			User
@@ -88,21 +88,21 @@ func (i *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/profile/orders [delete]
 
-func(i *OrderHandler) CancelOrder(c *gin.Context){
-	id , err :=strconv.Atoi("id")
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"conversion to integer not possible",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+func (i *OrderHandler) CancelOrder(c *gin.Context) {
+	id, err := strconv.Atoi("id")
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "conversion to integer not possible", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 
 	}
-	if err :=i.OrderUseCase.CancelOrder(id);err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"feilds provided in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err := i.OrderUseCase.CancelOrder(id); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "feilds provided in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes:=response.ClientResponse(http.StatusOK,"successfully canceled the order ",nil,nil)
-	c.JSON(http.StatusOK,successRes)
+	successRes := response.ClientResponse(http.StatusOK, "successfully canceled the order ", nil, nil)
+	c.JSON(http.StatusOK, successRes)
 }
 
 // @Summary		Update Order Status
@@ -116,3 +116,30 @@ func(i *OrderHandler) CancelOrder(c *gin.Context){
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/orders/edit/status [put]
+func (i *OrderHandler) EditOrderStatus(c *gin.Context) {
+	var status models.EditOrderStatus
+	err := c.BindJSON(&status)
+	if err !=nil{
+		errorRes :=response.ClientResponse(http.StatusBadRequest,"conversion to integer",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+		return
+	}
+	if err := i.OrderUseCase.EditOrderStatus(status.Status,status.OrderID);err !=nil{
+		errorRes :=response.ClientResponse(http.StatusBadRequest,"fields provided are in wrong format",nil,err.Error())
+		c.JSON(http.StatusBadRequest,errorRes)
+
+		return
+	}
+	successRes :=response.ClientResponse(http.StatusOK,"successfully edited the order status ",nil,nil)
+	c.JSON(http.StatusOK,successRes)
+
+}
+// @Summary		Admin Orders
+// @Description	Admin can view the orders according to status
+// @Tags			Admin
+// @Accept			json
+// @Produce		    json
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/orders [get]

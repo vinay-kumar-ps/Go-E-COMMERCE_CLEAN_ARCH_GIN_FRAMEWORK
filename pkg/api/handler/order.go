@@ -68,7 +68,7 @@ func (i *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	if err := i.OrderUseCase.OrderItemsFromCart(order.UserID, order.AddressID, order.PaymentMethodID, order.CouponID); err != ni {
+	if err := i.OrderUseCase.OrderItemsFromCart(order.UserID, order.AddressID, order.PaymentMethodID, order.CouponID); err != nil {
 		errorRes := response.ClientResponse(http.StatusBadRequest, "could not make order ", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
@@ -119,21 +119,22 @@ func (i *OrderHandler) CancelOrder(c *gin.Context) {
 func (i *OrderHandler) EditOrderStatus(c *gin.Context) {
 	var status models.EditOrderStatus
 	err := c.BindJSON(&status)
-	if err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"conversion to integer",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "conversion to integer", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	if err := i.OrderUseCase.EditOrderStatus(status.Status,status.OrderID);err !=nil{
-		errorRes :=response.ClientResponse(http.StatusBadRequest,"fields provided are in wrong format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,errorRes)
+	if err := i.OrderUseCase.EditOrderStatus(status.Status, status.OrderID); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
 
 		return
 	}
-	successRes :=response.ClientResponse(http.StatusOK,"successfully edited the order status ",nil,nil)
-	c.JSON(http.StatusOK,successRes)
+	successRes := response.ClientResponse(http.StatusOK, "successfully edited the order status ", nil, nil)
+	c.JSON(http.StatusOK, successRes)
 
 }
+
 // @Summary		Admin Orders
 // @Description	Admin can view the orders according to status
 // @Tags			Admin
@@ -143,3 +144,78 @@ func (i *OrderHandler) EditOrderStatus(c *gin.Context) {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/orders [get]
+func (i *OrderHandler) AdminOrders(c *gin.Context) {
+
+	orders, err := i.OrderUseCase.AdminOrders()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not retrieve records", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all records", orders, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+// @Summary		Return Order
+// @Description	user can return the ordered products which is already delivered and then get the amount fot that particular purchase back in their wallet
+// @Tags			User
+// @Accept			json
+// @Produce		    json
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/users/profile/orders/return [put]
+
+func (i *OrderHandler) ReturnOrder(c *gin.Context) {
+	id, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		erroRes := response.ClientResponse(http.StatusBadRequest, "conversion to integer not possible", nil, err.Error())
+		c.JSON(http.StatusBadRequest, erroRes)
+		return
+	}
+	if err := i.OrderUseCase.ReturnOrder(id); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "return success .the amount will be credited your wallet", nil, err.Error())
+	c.JSON(http.StatusOK, successRes)
+}
+func (i *OrderHandler) MakePaymentStatusAsPaid(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "conversion to integer not possible", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	if err := i.orderUseCase.MakePaymentStatusAsPaid(id); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "successfully updated as paid", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+func (i *OrderHandler) GetIndividualOrderDetails(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "error in getting parameter", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	details, err := i.OrderUseCase.GetIndividualOrderDetails(id)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not fetch the details", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "successfully fetched order details", details, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}

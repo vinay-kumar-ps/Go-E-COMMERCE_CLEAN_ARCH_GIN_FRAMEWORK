@@ -189,7 +189,7 @@ func (i *OrderHandler) MakePaymentStatusAsPaid(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	if err := i.orderUseCase.MakePaymentStatusAsPaid(id); err != nil {
+	if err := i.OrderUseCase.MakePaymentStatusAsPaid(id); err != nil {
 		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return

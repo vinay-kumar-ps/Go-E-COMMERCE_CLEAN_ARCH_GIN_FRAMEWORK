@@ -6,7 +6,7 @@ package di
 
 import (
 	http "ecommerce/pkg/api"
-	handler"ecommerce/pkg/api/handlers"
+	handler"ecommerce/pkg/api/handler"
     config	"ecommerce/pkg/config"
     db	"ecommerce/pkg/db"
     repository	"ecommerce/pkg/repository"

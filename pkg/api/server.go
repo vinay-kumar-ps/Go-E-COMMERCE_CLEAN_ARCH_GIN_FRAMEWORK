@@ -1,7 +1,7 @@
 package api
 
 import (
-	handler "ecommerce/pkg/api/handler"
+	handler "ecommerce/pkg/api/handlers"
 	"ecommerce/pkg/routes"
 	"log"
 

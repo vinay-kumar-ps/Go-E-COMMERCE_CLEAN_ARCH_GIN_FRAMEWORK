@@ -4,7 +4,6 @@ import (
 	"ecommerce/pkg/domain"
 	"ecommerce/pkg/utils/models"
 )
-
 type UserRepository interface {
 	UserSignUp(user models.UserDetails, referal string) (models.UserDetailsResponse, error)
 	CheckUserAvailability(email string) bool

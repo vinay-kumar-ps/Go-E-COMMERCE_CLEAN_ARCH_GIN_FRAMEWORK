@@ -1,7 +1,7 @@
 package handler
 
 import (
-services"ecommerce/pkg/usecase/interfaces"
+	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
 	"ecommerce/pkg/utils/response"
 	"net/http"
@@ -9,12 +9,11 @@ services"ecommerce/pkg/usecase/interfaces"
 
 	"github.com/gin-gonic/gin"
 )
-
 type CartHandler struct {
-	usecase services.CartUsecase
+	usecase services.CartUseCase
 }
 
-func NewCartHandler(usecase services.CartUsecase) *CartHandler {
+func NewCartHandler(usecase services.CartUseCase) *CartHandler {
 	return &CartHandler{
 		usecase: usecase,
 	}
@@ -30,8 +29,8 @@ func NewCartHandler(usecase services.CartUsecase) *CartHandler {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/home/add-to-cart [post]
-
 func (i *CartHandler) AddToCart(c *gin.Context) {
+
 	var model models.AddToCart
 	if err := c.BindJSON(&model); err != nil {
 		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
@@ -39,13 +38,26 @@ func (i *CartHandler) AddToCart(c *gin.Context) {
 		return
 	}
 	if err := i.usecase.AddToCart(model.UserID, model.InventoryID); err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "could not add the product to cart", nil, err.Error())
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not add the Cart", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK, "successfully added to cart", nil, nil)
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully added To cart", nil, nil)
 	c.JSON(http.StatusOK, successRes)
+
 }
+
+// @Summary		Checkout section
+// @Description	Add products to carts  for the purchase
+// @Tags			User
+// @Accept			json
+// @Produce		    json
+// @Param			id	query	string	true	"id"
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/users/check-out [get]
 func (i *CartHandler) CheckOut(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -53,13 +65,13 @@ func (i *CartHandler) CheckOut(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
+
 	products, err := i.usecase.CheckOut(id)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusBadRequest, "could not open checkout", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK, "Succesfully got all records", products, nil)
+	successRes := response.ClientResponse(http.StatusOK, "Successfully got all records", products, nil)
 	c.JSON(http.StatusOK, successRes)
-
 }

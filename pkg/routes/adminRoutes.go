@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"ecommerce/pkg/api/handlers"
+	"ecommerce/pkg/api/handler"
 	"ecommerce/pkg/api/middleware"
 
 	"github.com/gin-gonic/gin"

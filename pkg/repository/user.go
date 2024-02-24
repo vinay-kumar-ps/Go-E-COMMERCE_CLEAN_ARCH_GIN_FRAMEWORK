@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+
 type userDatabase struct {
 	DB *gorm.DB
 }

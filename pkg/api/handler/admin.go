@@ -6,7 +6,6 @@ import (
 	models "ecommerce/pkg/utils/models"
 	response "ecommerce/pkg/utils/response"
 
-	// "encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -15,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
-
 type AdminHandler struct {
 	adminUseCase services.AdminUseCase
 }

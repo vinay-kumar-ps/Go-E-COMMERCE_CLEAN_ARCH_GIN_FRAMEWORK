@@ -1,7 +1,7 @@
 package api
 
 import (
-	handler "ecommerce/pkg/api/handlers"
+	handler "ecommerce/pkg/api/handler"
 	"ecommerce/pkg/routes"
 	"log"
 
@@ -9,12 +9,11 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
-
 type ServerHTTP struct {
 	engine *gin.Engine
 }
 
-func NewServeHTTP(UserHandler *handler.UserHandler,
+func NewServerHTTP(userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
 	categoryHandler *handler.CategoryHandler,
 	inventoryHandler *handler.InventoryHandler,
@@ -38,8 +37,8 @@ func NewServeHTTP(UserHandler *handler.UserHandler,
 
 	engine.GET("/validate-token", adminHandler.ValidateRefreshTokenAndCreateNewAccess)
 
-	routes.UserRoutes(engine.Group("/users"), UserHandler, otpHandler, inventoryHandler, orderHandler, cartHandler, paymentHandler, wishlistHandler, categoryHandler, couponHandler)
-	routes.AdminRoutes(engine.Group("/admin"), adminHandler, inventoryHandler, UserHandler, categoryHandler, orderHandler, couponHandler, offerhandler)
+	routes.UserRoutes(engine.Group("/users"), userHandler, otpHandler, inventoryHandler, orderHandler, cartHandler, paymentHandler, wishlistHandler, categoryHandler, couponHandler)
+	routes.AdminRoutes(engine.Group("/admin"), adminHandler, inventoryHandler, userHandler, categoryHandler, orderHandler, couponHandler, offerhandler)
 
 	return &ServerHTTP{engine: engine}
 }

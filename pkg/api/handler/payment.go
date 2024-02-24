@@ -2,22 +2,21 @@ package handler
 
 import (
 	services "ecommerce/pkg/usecase/interfaces"
-	response "ecommerce/pkg/utils/response"
+	 "ecommerce/pkg/utils/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
-
 type PaymentHandler struct {
 	usecase services.PaymentUseCase
 }
 
-func NewpaymentHandler(use services.PaymentUseCase) *PaymentHandler {
+func NewPaymentHandler(use services.PaymentUseCase) *PaymentHandler {
 	return &PaymentHandler{
 		usecase: use,
 	}
-
 }
+
 func (p *PaymentHandler) MakePaymentRazorPay(c *gin.Context) {
 
 	orderID := c.Query("id")
@@ -32,6 +31,7 @@ func (p *PaymentHandler) MakePaymentRazorPay(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "razorpay.html", orderDetail)
 }
+
 func (p *PaymentHandler) VerifyPayment(c *gin.Context) {
 
 	orderID := c.Query("order_id")
@@ -61,5 +61,6 @@ func (p *PaymentHandler) MakePaymentFromWallet(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorRes)
 		return
 	}
+
 	c.HTML(http.StatusOK, "razorpay.html", orderDetail)
 }

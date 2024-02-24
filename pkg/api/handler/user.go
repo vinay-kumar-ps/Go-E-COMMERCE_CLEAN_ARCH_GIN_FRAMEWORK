@@ -36,7 +36,6 @@ func NewUserHandler(usecase services.UserUseCase) *UserHandler {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/signup [post]
-
 func (u *UserHandler) UserSignUp(c *gin.Context) {
 
 	var user models.UserDetails
@@ -493,6 +492,7 @@ func (i *UserHandler) RemoveFromCart(c *gin.Context) {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/cart/updateQuantity/plus [put]
+
 func (i *UserHandler) UpdateQuantityAdd(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -554,7 +554,7 @@ func (i *UserHandler) UpdateQuantityLess(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
-// @Summary		Get Referral link
+/// @Summary		Get Referral link
 // @Description	user can get a referral link and it is a share able link
 // @Tags			User
 // @Accept			json

@@ -7,7 +7,7 @@
 package di
 
 import (
-	http "ecommerce/pkg/api"
+	"ecommerce/pkg/api"
 	"ecommerce/pkg/api/handler"
 	"ecommerce/pkg/config"
 	"ecommerce/pkg/db"
@@ -18,7 +18,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeAPI(cfg config.Config) (*http.ServerHTTP, error) {
+func InitializeAPI(cfg config.Config) (*api.ServerHTTP, error) {
 	gormDB, err := db.ConnectDatabase(cfg)
 	if err != nil {
 		return nil, err
@@ -75,10 +75,10 @@ func InitializeAPI(cfg config.Config) (*http.ServerHTTP, error) {
 
 	paymentRepository := repository.NewPaymentRepository(gormDB)
 	paymentUseCase := usecase.NewPaymentUseCase(paymentRepository)
-	paymentHandler := handler.NewpaymentHandler(paymentUseCase)
+	paymentHandler := handler.NewPaymentHandler(paymentUseCase)
 
 	
-	serverHTTP := http.NewServerHTTP(userHandler,adminHandler,categoryHandler,inventoryHandler,otpHandler,orderHandler,cartHandler,couponHandler,paymentHandler,offerHandler,wishlistHandler)
+	serverHTTP := api.NewServerHTTP(userHandler,adminHandler,categoryHandler,inventoryHandler,otpHandler,orderHandler,cartHandler,couponHandler,paymentHandler,offerHandler,wishlistHandler)
 
 
 

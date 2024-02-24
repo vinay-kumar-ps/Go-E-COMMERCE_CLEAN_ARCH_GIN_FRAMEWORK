@@ -1,12 +1,13 @@
 package usecase
 
 import (
-	config "ecommerce/pkg/config"
+	"ecommerce/pkg/config"
 	"ecommerce/pkg/domain"
 	helper_interface "ecommerce/pkg/helper/interface"
 	interfaces "ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
 	"errors"
+	"fmt"
 )
 
 type userUseCase struct {
@@ -418,17 +419,17 @@ func (i *userUseCase) UpdateQuantityLess(id, inv int) error {
 
 }
 
-// func (i *userUseCase) GetMyReferenceLink(id int) (string, error) {
+func (i *userUseCase) GetMyReferenceLink(id int) (string, error) {
 
-// 	baseURL := "jerseyhub.com/users/signup"
+	baseURL := "jerseyhub.com/users/signup"
 
-// 	referralCode, err := i.userRepo.GetReferralCodeFromID(id)
-// 	if err != nil {
-// 		return "", errors.New("error getting ref code")
-// 	}
+	referralCode, err := i.userRepo.GetReferralCodeFromID(id)
+	if err != nil {
+		return "", errors.New("error getting ref code")
+	}
 
-// 	referralLink := fmt.Sprintf("%s?ref=%s", baseURL, referralCode)
+	referralLink := fmt.Sprintf("%s?ref=%s", baseURL, referralCode)
 
-// 	//returning the link
-// 	return referralLink, nil
-// }
+	//returning the link
+	return referralLink, nil
+}

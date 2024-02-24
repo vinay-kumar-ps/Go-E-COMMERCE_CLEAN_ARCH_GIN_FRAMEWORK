@@ -2,7 +2,7 @@ package api
 
 import (
 	config "ecommerce/pkg/config"
-	di "ecommerce/pkg/di"
+	 "ecommerce/pkg/di"
 	"log"
 
 	"ecommerce/cmd/api/docs"
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// // swagger 2.0 Meta Information
-	docs.SwaggerInfo.Title = "ANIMESTORE"
+	docs.SwaggerInfo.Title = ""
 	docs.SwaggerInfo.Description = "Here passion meets the fashion,This is an online store for purchasing high quality Dress of your favorite Anime.."
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Host = config.BASE_URL

@@ -1,8 +1,8 @@
-package api
+package main
 
 import (
 	config "ecommerce/pkg/config"
-	 "ecommerce/pkg/di"
+	"ecommerce/pkg/di"
 	"log"
 
 	"ecommerce/cmd/api/docs"

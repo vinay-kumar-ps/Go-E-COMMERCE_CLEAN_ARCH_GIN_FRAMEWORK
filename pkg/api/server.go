@@ -9,6 +9,8 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// http server for the web application
 type ServerHTTP struct {
 	engine *gin.Engine
 }
@@ -27,7 +29,7 @@ func NewServerHTTP(userHandler *handler.UserHandler,
 
 	engine := gin.New()
 
-	engine.LoadHTMLGlob("templates/*.html")
+	engine.LoadHTMLFiles("pkg/templates/*.html")
 
 	// Use logger from Gin
 	engine.Use(gin.Logger())
@@ -44,7 +46,7 @@ func NewServerHTTP(userHandler *handler.UserHandler,
 }
 
 func (sh *ServerHTTP) Start() {
-	err := sh.engine.Run(":8082")
+	err := sh.engine.Run(":3000")
 	if err != nil {
 		log.Fatal("gin engine couldn't start")
 	}

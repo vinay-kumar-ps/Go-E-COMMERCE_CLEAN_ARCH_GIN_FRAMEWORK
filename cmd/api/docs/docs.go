@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/admin/adminlogin": {
             "post": {
-                "description": "Login handler for jerseyhub admins",
+                "description": "Login handler for animestore admins",
                 "consumes": [
                     "application/json"
                 ],

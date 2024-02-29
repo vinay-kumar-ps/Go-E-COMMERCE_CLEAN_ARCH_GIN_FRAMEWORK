@@ -56,7 +56,7 @@ func CheckAndCreateAdmin(db *gorm.DB) error {
 
 	if count == 0 {
 		// If no admin user exists, create one with default credentials
-		password := "password"
+		password := "admmin123"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			return fmt.Errorf("failed to generate hashed password: %v", err)
@@ -64,7 +64,8 @@ func CheckAndCreateAdmin(db *gorm.DB) error {
 
 		admin := domain.Admin{
 			ID:       1,
-			Username: "admin", // Change this to your desired username
+			Username: "admin",                // Change this to your desired username
+			Email:    "animestore@gmail.com", // Change this to the admin's email address
 			Password: string(hashedPassword),
 		}
 

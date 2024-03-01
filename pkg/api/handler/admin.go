@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
-
 type AdminHandler struct {
 	adminUseCase services.AdminUseCase
 }
@@ -26,7 +25,7 @@ func NewAdminHandler(usecase services.AdminUseCase) *AdminHandler {
 }
 
 // @Summary		Admin Login
-// @Description	Login handler for animestore admins
+// @Description	Login handler for jerseyhub admins
 // @Tags			Admin
 // @Accept			json
 // @Produce		json

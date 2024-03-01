@@ -54,6 +54,7 @@ func UserAuthMiddleware(c *gin.Context) {
 
 	c.Set("role", role)
 	c.Set("id", int(id))
+	fmt.Println("user auth is fine")
 
 	c.Next()
 }

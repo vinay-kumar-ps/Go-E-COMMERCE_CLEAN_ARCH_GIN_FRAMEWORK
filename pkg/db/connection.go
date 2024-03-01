@@ -50,29 +50,24 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 
 func CheckAndCreateAdmin(db *gorm.DB) error {
 	var count int64
-	if err := db.Model(&domain.Admin{}).Count(&count).Error; err != nil {
-		return fmt.Errorf("failed to count admin users: %v", err)
-	}
+	db.Model(&domain.Admin{}).Count(&count)
 
+	fmt.Println("error occured here")
+	
 	if count == 0 {
-		// If no admin user exists, create one with default credentials
-		password := "admmin123"
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		password := "password123"
+		hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 		if err != nil {
-			return fmt.Errorf("failed to generate hashed password: %v", err)
+			fmt.Println("check and create admin error")
+			return err
 		}
-
 		admin := domain.Admin{
 			ID:       1,
-			Username: "admin",                // Change this to your desired username
-			Email:    "animestore@gmail.com", // Change this to the admin's email address
-			Password: string(hashedPassword),
+			Name:     "admin",
+			UserName: "animestore@gmal.com",
+			Password: string(hashedPass),
 		}
-
-		if err := db.Create(&admin).Error; err != nil {
-			return fmt.Errorf("failed to create admin user: %v", err)
-		}
+		db.Create(&admin)
 	}
-
 	return nil
 }

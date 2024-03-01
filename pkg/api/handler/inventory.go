@@ -35,13 +35,13 @@ func NewInventoryHandler(usecase services.InventoryUseCase) *InventoryHandler {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/admin/inventories [post]
-func (i *InventoryHandler) AddInventory(c *gin.Context){
+func (i *InventoryHandler) AddInventory(c *gin.Context) {
 
 	var inventory models.AddInventories
-	categoryID,err :=strconv.Atoi(c.Request.FormValue("category_id"))
-	if err !=nil{
-		erroRes :=response.ClientResponse(http.StatusBadRequest,"form file error",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
+	categoryID, err := strconv.Atoi(c.Request.FormValue("category_id"))
+	if err != nil {
+		erroRes := response.ClientResponse(http.StatusBadRequest, "form file error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, erroRes)
 		return
 	}
 	productName := c.Request.FormValue("product_name")
@@ -82,7 +82,6 @@ func (i *InventoryHandler) AddInventory(c *gin.Context){
 
 	successRes := response.ClientResponse(http.StatusOK, "Successfully added Inventory", InventoryResponse, nil)
 	c.JSON(http.StatusOK, successRes)
-
 
 }
 

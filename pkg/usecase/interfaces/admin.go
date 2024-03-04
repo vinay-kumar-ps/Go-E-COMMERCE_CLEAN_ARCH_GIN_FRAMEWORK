@@ -5,12 +5,10 @@ import (
 	"ecommerce/pkg/utils/models"
 )
 
-type AdminUseCase interface {
-	LoginHandler(adminDetails models.AdminLogin) (domain.TokenAdmin, error)
+
+type AdminUsecase interface {
+	LoginHandler(adminDetails models.AdminLogin) (domain.AdminToken, error)
 	BlockUser(id string) error
-	UnBlockUser(id string) error
-	GetUsers(page int) ([]models.UserDetailsAtAdmin, error)
-	NewPaymentMethod(string) error
-	ListPaymentMethods() ([]domain.PaymentMethod, error)
-	DeletePaymentMethod(id int) error
+	UnblockUser(id string) error
+	GetUsers(page, limit int) ([]models.UserDetailsAtAdmin, error)
 }

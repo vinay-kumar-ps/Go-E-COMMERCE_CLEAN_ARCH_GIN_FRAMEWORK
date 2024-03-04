@@ -7,8 +7,8 @@ import (
 
 
 type OfferRepository interface {
-	AddNewOffer(model models.OfferMaking) error
-	MakeOfferExpire(id int) error
-	FindDiscountPercentage(int) (int, error)
-	GetOffers() ([]domain.Offer, error)
+	AddNewOffer(models.CreateOffer) error
+	MakeOfferExpired(categorytId int) error
+	FindDiscountPercentage(categorytId int) (int, error)
+	GetOffers(page, limit int) ([]domain.Offer, error)
 }

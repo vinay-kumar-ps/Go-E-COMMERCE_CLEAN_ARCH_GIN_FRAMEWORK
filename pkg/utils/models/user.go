@@ -1,12 +1,42 @@
 package models
 
+type UserLogin struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// User Signup
 type UserDetails struct {
 	Name            string `json:"name"`
-	Email           string `json:"email" validate:"email"`
+	Email           string `json:"email" validate:"required"`
+	Username        string `json:"username"`
 	Phone           string `json:"phone"`
 	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirmpassword"`
+	ConfirmPassword string `json:"confirm_password"`
 }
+
+type UserToken struct {
+	User  UserDetailsResponse
+	Token string
+}
+
+// user details shown after loggin
+type UserDetailsResponse struct {
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email" validate:"email"`
+	Phone string `json:"phone"`
+}
+
+type UserSignInResponse struct{
+	Id       uint   `json:"id"`
+	UserID   uint   `json:"user_id"`
+	Name     string `json:"name"`
+	Email    string `json:"email" validate:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+}
+
 
 type Address struct {
 	Id        uint   `json:"id" gorm:"unique;not null"`
@@ -19,105 +49,52 @@ type Address struct {
 	Pin       string `json:"pin" validate:"required"`
 }
 
-// user details along with embedded token which can be used by the user to access protected routes
-type TokenUsers struct {
-	Users UserDetailsResponse
-	Token string
-}
-
-// user details shown after logging in
-type UserDetailsResponse struct {
-	Id    int    `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-}
-
-type UserLogin struct {
-	Email    string `json:"email" validate:"email"`
-	Password string `json:"password"`
-}
-
-type UserSignInResponse struct {
-	Id       uint   `json:"id"`
-	UserID   uint   `json:"user_id"`
-	Name     string `json:"name"`
-	Email    string `json:"email" validate:"email"`
-	Phone    string `json:"phone"`
-	Password string `json:"password"`
-}
-
-type UserDetailsAtAdmin struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Phone   string `json:"phone"`
-	Blocked bool   `json:"blocked"`
-}
-
 type AddAddress struct {
 	Name      string `json:"name" validate:"required"`
 	HouseName string `json:"house_name" validate:"required"`
 	Street    string `json:"street" validate:"required"`
 	City      string `json:"city" validate:"required"`
 	State     string `json:"state" validate:"required"`
-	Phone     string `json:"phone" validate:"require"`
 	Pin       string `json:"pin" validate:"required"`
 }
 
 type ChangePassword struct {
-	Oldpassword string `json:"old_password"`
-	Password    string `json:"password"`
-	Repassword  string `json:"re_password"`
-}
-
-type ForgotPasswordSend struct {
-	Phone string `json:"phone"`
-}
-
-type ForgotVerify struct {
-	Phone       string `json:"phone"`
-	Otp         string `json:"otp"`
-	NewPassword string `json:"newpassword"`
-}
-
-type EditName struct {
-	Name string `json:"name"`
-}
-
-type EditEmail struct {
-	Email string `json:"email"`
-}
-
-type EditPhone struct {
-	Phone string `json:"phone"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+	RePassword  string `json:"re_password"`
 }
 
 type GetCart struct {
-	ID              int     `json:"product_id"`
-	ProductName     string  `json:"product_name"`
-	Image           string  `json:"image"`
-	Category_id     int     `json:"category_id"`
-	Quantity        int     `json:"quantity"`
-	StockAvailable  int     `json:"stock"`
-	Total           float64 `json:"total_price"`
-	DiscountedPrice float64 `json:"discounted_price"`
-}
-
-type CheckOut struct {
-	CartID          int
-	Addresses       []Address
-	Products        []GetCart
-	PaymentMethods  []PaymentMethod
-	TotalPrice      float64
-	DiscountedPrice float64
-}
-
-type Search struct {
-	Key string `json:"searchkey"`
+	Id            int     `json:"product_id"`
+	ProductName   string  `json:"product_name"`
+	CategoryId    int     `json:"category_id"`
+	Quantity      int     `json:"quantity"`
+	Total         float64 `json:"total"`
+	DiscountPrice float64 `json:"discount_price"`
 }
 
 type GetCartResponse struct {
-	ID   int
-	Data []GetCart
+	Id     int
+	Values []GetCart
+}
+
+type CheckOut struct {
+	CartId         int
+	Addresses      []Address
+	Products       []GetCart
+	PaymentMethods []PaymentMethod
+	TotalPrice     float64
+	DiscountPrice  float64
+}
+type EditUser struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+}
+
+type UserKey string
+
+func (k UserKey) String() string {
+	return string(k)
 }

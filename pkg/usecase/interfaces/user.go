@@ -5,24 +5,24 @@ import (
 	"ecommerce/pkg/utils/models"
 )
 
-type UserUseCase interface {
-	UserSignUp(user models.UserDetails, ref string) (models.TokenUsers, error)
-	LoginHandler(user models.UserLogin) (models.TokenUsers, error)
+
+
+type UserUsecase interface {
+	Login(user models.UserLogin) (models.UserToken, error)
+	SignUp(user models.UserDetails) (models.UserToken, error)
 	AddAddress(id int, address models.AddAddress) error
 	GetAddresses(id int) ([]domain.Address, error)
 	GetUserDetails(id int) (models.UserDetailsResponse, error)
 
 	ChangePassword(id int, old string, password string, repassword string) error
-	ForgotPasswordSend(phone string) error
-	ForgotPasswordVerifyAndChange(model models.ForgotVerify) error
-	EditName(id int, name string) error
-	EditEmail(id int, email string) error
-	EditPhone(id int, phone string) error
+	EditUser(id int, userData models.EditUser) error
 
+	GetCartID(userID int) (int, error)
 	GetCart(id int) (models.GetCartResponse, error)
-	RemoveFromCart(cart, inventory int) error
+	RemoveFromCart(id int, inventoryID int) error
+	ClearCart(cartID int) error
 	UpdateQuantityAdd(id, inv_id int) error
 	UpdateQuantityLess(id, inv_id int) error
 
-	GetMyReferenceLink(id int) (string, error)
+	// GetWallet(id, page, limit int) (models.Wallet, error)
 }

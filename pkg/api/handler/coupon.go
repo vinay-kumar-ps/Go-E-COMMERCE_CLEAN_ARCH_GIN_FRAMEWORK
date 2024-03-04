@@ -11,12 +11,13 @@ import (
 )
 
 type CouponHandler struct {
-	usecase services.CouponUsecase
+	couponUsecase services.CouponUsecase
 }
 
-func NewCouponHandler(use services.CouponUsecase) *CouponHandler {
+// Constructor function
+func NewCouponHandler(couponUsecase services.CouponUsecase) *CouponHandler {
 	return &CouponHandler{
-		usecase: use,
+		couponUsecase: couponUsecase,
 	}
 }
 
@@ -25,32 +26,29 @@ func NewCouponHandler(use services.CouponUsecase) *CouponHandler {
 // @Tags			Admin
 // @Accept			json
 // @Produce		    json
-// @Param			coupon	body	models.Coupons	true	"coupon"
+// @Param			coupon	body	models.Coupon	true	"coupon"
 // @Security		Bearer
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
-// @Router			/admin/coupons [post]
+// @Router			/admin/coupons/create [post]
+func (coupH *CouponHandler) CreateNewCoupon(c *gin.Context) {
+	var coupon models.Coupon
 
-func (coup *CouponHandler) CreateNewCoupon(c *gin.Context) {
-	var coupon models.Coupons
 	if err := c.BindJSON(&coupon); err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in worng format", nil, err.Error())
+		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-
-	err := coup.usecase.AddCoupon(coupon)
-	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "could not add the coupon", nil, err.Error())
+	if err := coupH.couponUsecase.Addcoupon(coupon); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not add the Coupon", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK, "successfully added coupon ", nil, nil)
+	successRes := response.ClientResponse(http.StatusOK, "Successfully added the coupon", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
 
-
-// @Summary		Make Coupon ad invalid
+// @Summary		Make Coupon invalid
 // @Description	Admin can make the coupons as invalid so that users cannot use that particular coupon
 // @Tags			Admin
 // @Accept			json
@@ -59,53 +57,45 @@ func (coup *CouponHandler) CreateNewCoupon(c *gin.Context) {
 // @Security		Bearer
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
-// @Router			/admin/coupons [delete]
-
-func(coup *CouponHandler) MakeCOuponInvalid(c *gin.Context){
-	id,err :=strconv.Atoi(c.Query("id"))
-	if err !=nil{
-		erroRes :=response.ClientResponse(http.StatusBadRequest,"fields provided are in worng format",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
-		return
-	}
-	if err :=coup.usecase.MakeCouponInvalid(id);err !=nil{
-		erroRes := response.ClientResponse(http.StatusBadRequest,"coupon cannot be made invalid",nil,err.Error())
-		c.JSON(http.StatusBadRequest,erroRes)
-		return
-	}
-	successRes:=response.ClientResponse(http.StatusOK,"successfully made coupon as invalid",nil,nil)
-	c.JSON(http.StatusOK,successRes)
-
-}
-func (coup *CouponHandler) ReActivateCoupon(c *gin.Context) {
-	id, err := strconv.Atoi(c.Query("id"))
+// @Router			/admin/coupons/expire [post]
+func (coupH *CouponHandler) MakeCouponInvalid(c *gin.Context) {
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+		errRes := response.ClientResponse(http.StatusBadRequest, "field provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-
-	if err := coup.usecase.ReActivateCoupon(id); err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "Coupon cannot be reactivated", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+	if err := coupH.couponUsecase.MakeCouponInvalid(id); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "make coupon invalid failed", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-
-	successRes := response.ClientResponse(http.StatusOK, "Successfully made Coupon as invaid", nil, nil)
+	successRes := response.ClientResponse(http.StatusOK, "successfully made coupon as invalid", nil, nil)
 	c.JSON(http.StatusOK, successRes)
-
 }
 
-func (co *CouponHandler) GetAllCoupons(c *gin.Context) {
+// @Summary		List Coupons
+// @Description	Admin can view the list of  Coupons
+// @Tags			Admin
+// @Accept			json
+// @Produce		    json
+// @Param			page	query  string 	true	"page"
+// @Param			limit	query  string 	true	"limit"
+// @Security		Bearer
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/coupons [get]
+func (coupH *CouponHandler) Coupons(c *gin.Context) {
 
-	categories, err := co.usecase.GetAllCoupons()
+	coupons, err := coupH.couponUsecase.GetCoupons()
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "error in getting coupons", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't get coupons", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 
-	successRes := response.ClientResponse(http.StatusOK, "Successfully got all coupons", categories, nil)
+	successRes := response.ClientResponse(http.StatusOK, "coupons get successfully", coupons, nil)
 	c.JSON(http.StatusOK, successRes)
 
 }

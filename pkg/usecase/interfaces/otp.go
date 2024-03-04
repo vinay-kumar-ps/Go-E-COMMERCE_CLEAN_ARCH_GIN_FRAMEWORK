@@ -2,7 +2,7 @@ package interfaces
 
 import "ecommerce/pkg/utils/models"
 
-type OtpUseCase interface {
-	VerifyOTP(code models.VerifyData) (models.TokenUsers, error)
+type OtpUsecase interface {
+	VerifyOTP(code models.VerifyData) (models.UserToken, error)
 	SendOTP(phone string) error
 }

@@ -8,95 +8,93 @@ import (
 )
 
 
-type cartUseCase struct {
-	repo                interfaces.CartRepository
-	inventoryRepository interfaces.InventoryRepository
-	userUseCase         services.UserUseCase
+
+type CartUsecase struct {
+	cartRepo       interfaces.CartRepository
+	invRepo        interfaces.InventoryRespository
+	userUsecase    services.UserUsecase
+	paymentUsecase services.PaymentUsecase
 }
 
-func NewCartUseCase(repo interfaces.CartRepository, inventoryRepo interfaces.InventoryRepository, userUseCase services.UserUseCase) *cartUseCase {
-	return &cartUseCase{
-		repo:                repo,
-		inventoryRepository: inventoryRepo,
-		userUseCase:         userUseCase,
+// Constructor funciton
+
+func NewCartUsecase(cartRepo interfaces.CartRepository, invRepo interfaces.InventoryRespository, userUsecase services.UserUsecase, paymentUsecase services.PaymentUsecase) *CartUsecase {
+	return &CartUsecase{
+		cartRepo:       cartRepo,
+		invRepo:        invRepo,
+		userUsecase:    userUsecase,
+		paymentUsecase: paymentUsecase,
 	}
 }
 
-func (i *cartUseCase) AddToCart(userID, inventoryID int) error {
+func (cu *CartUsecase) AddToCart(user_id, inventory_id int) error {
 
-	//check if item already added if already present send error as already added
-
-	//check if the desired product has quantity available
-	stock, err := i.inventoryRepository.CheckStock(inventoryID)
+	// check the product has quantity available
+	stock, err := cu.invRepo.CheckStock(inventory_id)
 	if err != nil {
-		return err
+		return errors.New("no stock")
 	}
-	//if available then call userRepository
 	if stock <= 0 {
 		return errors.New("out of stock")
 	}
-
-	//find user cart id
-	cart_id, err := i.repo.GetCartId(userID)
+	// Find user cart id
+	cartId, err := cu.cartRepo.GetCartId(user_id)
 	if err != nil {
-		return errors.New("some error in geting user cart")
+		return errors.New("cart id not found")
 	}
-	//if user has no existing cart create new cart
-	if cart_id == 0 {
-		cart_id, err = i.repo.CreateNewCart(userID)
+	// If user has no cart,create a cart
+	if cartId == 0 {
+		cartId, err = cu.cartRepo.CreateNewCart(user_id)
 		if err != nil {
-			return errors.New("cannot create cart fro user")
+			return errors.New("cart creation failed")
 		}
 	}
+	// Check if already added
 
-	exists, err := i.repo.CheckIfItemIsAlreadyAdded(cart_id, inventoryID)
+	if cu.cartRepo.CheckIfInvAdded(inventory_id, cartId) {
+		err := cu.cartRepo.AddQuantity(inventory_id, cartId)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	// add product in line item
+	err = cu.cartRepo.AddLineItems(inventory_id, cartId)
 	if err != nil {
-		return err
+		return errors.New("product adding failed")
 	}
-
-	if exists {
-		return errors.New("item already exists in cart")
-	}
-
-	//add product to line items
-	if err := i.repo.AddLineItems(cart_id, inventoryID); err != nil {
-		return errors.New("error in adding products")
-	}
-
 	return nil
 }
 
-func (i *cartUseCase) CheckOut(id int) (models.CheckOut, error) {
+func (cu *CartUsecase) CheckOut(id int) (models.CheckOut, error) {
 
-	address, err := i.repo.GetAddresses(id)
+	// Getting address
+	address, err := cu.cartRepo.GetAddresses(id)
+	if err != nil {
+		return models.CheckOut{}, errors.New("address not found")
+	}
+	products, err := cu.userUsecase.GetCart(id)
 	if err != nil {
 		return models.CheckOut{}, err
 	}
-
-	payment, err := i.repo.GetPaymentOptions()
+	paymentMethod, err := cu.paymentUsecase.GetPaymentMethods()
 	if err != nil {
 		return models.CheckOut{}, err
 	}
+	var price, discount float64
 
-	products, err := i.userUseCase.GetCart(id)
-	if err != nil {
-		return models.CheckOut{}, err
+	for _, v := range products.Values {
+		discount += v.DiscountPrice
+		price += v.Total
 	}
 
-	var discountedPrice, totalPrice float64
-	for _, v := range products.Data {
-		discountedPrice += v.DiscountedPrice
-		totalPrice += v.Total
-	}
+	var checkOut models.CheckOut
+	checkOut.CartId = products.Id
+	checkOut.Addresses = address
+	checkOut.Products = products.Values
+	checkOut.PaymentMethods = paymentMethod
+	checkOut.TotalPrice = price
+	checkOut.DiscountPrice = discount
 
-	var checkout models.CheckOut
-
-	checkout.CartID = products.ID
-	checkout.Addresses = address
-	checkout.Products = products.Data
-	checkout.PaymentMethods = payment
-	checkout.TotalPrice = totalPrice
-	checkout.DiscountedPrice = discountedPrice
-
-	return checkout, err
+	return checkOut, nil
 }

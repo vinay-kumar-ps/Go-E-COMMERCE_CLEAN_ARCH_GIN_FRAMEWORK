@@ -2,9 +2,9 @@ package domain
 
 import "gorm.io/gorm"
 
-type Coupons struct {
+type Coupon struct {
 	gorm.Model
-	Coupon       string `json:"coupon" gorm:"unique;not null"`
-	DiscountRate int    `json:"discount_rate" gorm:"not null"`
+	Coupon       string `json:"coupon" gorm:"unique"`
+	DiscountRate int    `json:"discount_rate" `
 	Valid        bool   `json:"valid" gorm:"default:true"`
 }

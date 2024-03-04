@@ -6,17 +6,16 @@ import (
 )
 
 
-type InventoryUseCase interface {
-	AddInventory(inventory models.AddInventories, image *multipart.FileHeader) (models.InventoryResponse, error)
-	UpdateInventory(ProductID int, Stock int) (models.InventoryResponse, error)
+type InventoryUsecase interface {
+	AddInventory(inventory models.Inventory, image *multipart.FileHeader) (models.InventoryResponse, error)
+	UpdateInventory(invID int, invData models.UpdateInventory) (models.Inventory, error)
+	UpdateImage(invID int, image *multipart.FileHeader) (models.Inventory, error)
 	DeleteInventory(id string) error
 
-	ShowIndividualProducts(sku string) (models.Inventories, error)
-	ListProductsForUser(page, userID int) ([]models.Inventories, error)
-	ListProductsForAdmin(page int) ([]models.Inventories, error)
-
-	SearchProducts(key string) ([]models.Inventories, error)
-
-	UpdateProductImage(id int, file *multipart.FileHeader) error
-	EditInventoryDetails(int, models.EditInventoryDetails) error
+	ShowIndividualProducts(id string) (models.InventoryDetails, error)
+	ListProducts(page int, limit int) ([]models.InventoryList, error)
+	SearchProducts(key string, page, limit int) ([]models.InventoryList, error)
+	GetCategoryProducts(catID int, page, limit int) ([]models.InventoryList, error)
+	AddImage(product_id int, image *multipart.FileHeader) (models.InventoryResponse, error)
+	DeleteImage(product_id, image_id int) error
 }

@@ -12,9 +12,52 @@ import (
 	repository "ecommerce/pkg/repository"
 	usecase "ecommerce/pkg/usecase"
 )
+func InitializeAPI(cfg config.Config) (*api.ServerHTTP, error) {
+	wire.Build(db.ConnectDB,
+		repository.NewUserRepository,
+		usecase.NewUserUsecase,
+		handlers.NewUserHandler,
 
-func InitializeAPI(cfg config.Config) (*http.ServerHTTP, error) {
-	wire.Build(db.ConnectDatabase, repository.NewUserRepository, usecase.NewUserUseCase, handler.NewUserHandler, http.NewServerHTTP)
+		repository.NewAdminRepository,
+		usecase.NewAdminUsecase,
+		handlers.NewAdminHandler,
 
-	return &http.ServerHTTP{}, nil
+		repository.NewCartRepository,
+		usecase.NewCartUsecase,
+		handlers.NewCartHandler,
+
+		repository.NewCategoryRepository,
+		usecase.NewCategoryUsecase,
+		handlers.NewCategoryHandler,
+
+		repository.NewInventoryRepository,
+		usecase.NewInventoryUsecase,
+		handlers.NewInventoryHandler,
+
+		repository.NewOfferRepository,
+		usecase.NewOfferUsecase,
+		handlers.NewOfferHandler,
+
+		repository.NewOtpRepository,
+		usecase.NewOtpUsecase,
+		handlers.NewOtpHandler,
+
+		repository.NewCouponRepository,
+		usecase.NewCouponUsecase,
+		handlers.NewCouponHandler,
+
+		repository.NewPaymentRepository,
+		usecase.NewPaymentUsecase,
+		handlers.NewPaymentHandler,
+
+		repository.NewWishlistRepository,
+		usecase.NewWishlistUsecase,
+		handlers.NewWishlistHandler,
+
+		repository.NewOrderRepository,
+		usecase.NewOrderUsecase,
+		handlers.NewOrderHandler,
+
+		api.NewServerHttp)
+	return &api.ServerHTTP{}, nil
 }

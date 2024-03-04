@@ -6,8 +6,9 @@ import (
 )
 
  
-type OfferUseCase interface {
-	AddNewOffer(model models.OfferMaking) error
-	MakeOfferExpire(id int) error
-	GetOffers() ([]domain.Offer, error)
+
+type OfferUsecase interface {
+	AddNewOffer(model models.CreateOffer) error
+	MakeOfferExpire(catID int) error
+	GetOffers(page, limit int) ([]domain.Offer, error)
 }

@@ -11,76 +11,73 @@ import (
 	"ecommerce/pkg/api/handler"
 	"ecommerce/pkg/config"
 	"ecommerce/pkg/db"
-	"ecommerce/pkg/helper"
 	"ecommerce/pkg/repository"
 	"ecommerce/pkg/usecase"
 )
 
 // Injectors from wire.go:
 
-func InitializeAPI(cfg config.Config) (*api.ServerHTTP, error) {
-	gormDB, err := db.ConnectDatabase(cfg)
-	if err != nil {
-		return nil, err
+func InitializeAPI(cfg config.Config)(*api.ServerHTTP,error){
+	gormDB,err:=db.ConnectDB(cfg)
+	if err!=nil{
+		return nil,err
 	}
 
-	helper:=helper.NewHelper(cfg)
+	offerRepository:=repository.NewOfferRepository(gormDB)
+	offerUsecase:=usecase.NewOfferUsecase(offerRepository)
+	offerHandler:=handler.NewOfferHandler(offerUsecase)
 
-	offerRepository := repository.NewOfferRepository(gormDB)
-	offerUseCase := usecase.NewOfferUseCase(offerRepository)
-	offerHandler := handler.NewOfferHandler(offerUseCase)
+	orderRepository:=repository.NewOrderRepository(gormDB)
 
-	wishlistRepository := repository.NewWishlistRepository(gormDB)
-	wishlistUseCase := usecase.NewWishlistUseCase(wishlistRepository,offerRepository)
-	wishlistHandler := handler.NewWishlistHandler(wishlistUseCase)
+	userRepository:=repository.NewUserRepository(gormDB)
+	
+	userUsecase:=usecase.NewUserUsecase(userRepository,offerRepository,orderRepository)
 
+	couponRepository:=repository.NewCouponRepository(gormDB)
 
-	adminRepository := repository.NewAdminRepository(gormDB)
-	adminUseCase := usecase.NewAdminUseCase(adminRepository,helper)
-	adminHandler := handler.NewAdminHandler(adminUseCase)
+	orderUsecase:=usecase.NewOrderUsecase(orderRepository,userUsecase,couponRepository)
+	orderHandler:=handler.NewOrderHandler(orderUsecase)
 
-	inventoryRepository := repository.NewInventoryRepository(gormDB)
-	inventoryUseCase := usecase.NewInventoryUseCase(inventoryRepository,offerRepository,helper,wishlistRepository)
-	inventoryHandler := handler.NewInventoryHandler(inventoryUseCase)
+	userHandler:=handler.NewUserHandler(userUsecase)
 
-	categoryRepository := repository.NewCategoryRepository(gormDB)
-	categoryUseCase := usecase.NewCategoryUseCase(categoryRepository,inventoryRepository,offerRepository)
-	categoryHandler := handler.NewCategoryHandler(categoryUseCase)
+	wishlistRepository:=repository.NewWishlistRepository(gormDB)
+	wishlistUsecase:=usecase.NewWishlistUsecase(wishlistRepository)
+	wishlistHandler:=handler.NewWishlistHandler(wishlistUsecase)
 
-
-
-	otpRepository := repository.NewOtpRepository(gormDB)
-	otpUseCase := usecase.NewOtpUseCase(cfg, otpRepository,helper)
-	otpHandler := handler.NewOtpHandler(otpUseCase)
-
-
-	orderRepository := repository.NewOrderRepository(gormDB)
-
-	userRepository := repository.NewUserRepository(gormDB)
-	userUseCase := usecase.NewUserUseCase(userRepository,cfg,otpRepository,inventoryRepository,orderRepository,helper)
-	userHandler := handler.NewUserHandler(userUseCase)
-
-	couponRepository := repository.NewCouponRepository(gormDB)
-	couponUseCase := usecase.NewCouponUseCase(couponRepository)
-	couponHandler := handler.NewCouponHandler(couponUseCase)
-
-	orderUseCase := usecase.NewOrderUseCase(orderRepository,couponRepository,userUseCase)
-	orderHandler := handler.NewOrderHandler(orderUseCase)
-
-
-	cartRepository := repository.NewCartRepository(gormDB)
-	cartUseCase := usecase.NewCartUseCase(cartRepository,inventoryRepository,userUseCase)
-	cartHandler := handler.NewCartHandler(cartUseCase)
-
-
-	paymentRepository := repository.NewPaymentRepository(gormDB)
-	paymentUseCase := usecase.NewPaymentUseCase(paymentRepository)
-	paymentHandler := handler.NewPaymentHandler(paymentUseCase)
+	adminRepository :=repository.NewAdminRepository(gormDB)
+	adminUsecase:=usecase.NewAdminUsecase(adminRepository)
+	adminHandler:=handler.NewAdminHandler(adminUsecase)
 
 	
-	serverHTTP := api.NewServerHTTP(userHandler,adminHandler,categoryHandler,inventoryHandler,otpHandler,orderHandler,cartHandler,couponHandler,paymentHandler,offerHandler,wishlistHandler)
+
+	
+
+	inventoryRepository:=repository.NewInventoryRepository(gormDB)
+	inventoryUsecase:=usecase.NewInventoryUsecase(inventoryRepository)
+	inventoryHandler:=handler.NewInventoryHandler(inventoryUsecase)
+
+	categoryRepository:=repository.NewCategoryRepository(gormDB)
+	categoryUsecase:=usecase.NewCategoryUsecase(categoryRepository)
+	categoryHandler:=handler.NewCategoryHandler(categoryUsecase)
+
+	paymentRepo:=repository.NewPaymentRepository(gormDB)
+	paymentUsecase:=usecase.NewPaymentUsecase(paymentRepo,userRepository)
+	paymentHandler:=handler.NewPaymentHandler(paymentUsecase)
+
+	cartRepository:=repository.NewCartRepository(gormDB)
+	cartUsecase:=usecase.NewCartUsecase(cartRepository,inventoryRepository,userUsecase,paymentUsecase)
+	cartHandler:=handler.NewCartHandler(cartUsecase)
+
+	
+	couponUsecase:=usecase.NewCouponUsecase(couponRepository)
+	couponHandler:=handler.NewCouponHandler(couponUsecase)
 
 
+	otpRepository:=repository.NewOtpRepository(gormDB)
+	otpUsecase:=usecase.NewOtpUsecase(cfg,otpRepository)
+	otpHandler:=handler.NewOtpHandler(otpUsecase)
 
-	return serverHTTP, nil
+	serverHTTP:=api.NewServerHttp(categoryHandler,inventoryHandler,userHandler,otpHandler,adminHandler,cartHandler,orderHandler,paymentHandler,wishlistHandler,offerHandler,couponHandler)
+
+	return serverHTTP,nil
 }

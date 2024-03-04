@@ -11,12 +11,13 @@ import (
 // middleware for admin authentication
 
 func AdminAuthMiddleware(c *gin.Context) {
-	token, err := c.Cookie("Authorization")
-	fmt.Println("first token: ", token)
-	if err != nil {
+	token,err:=c.Cookie("Authorization")
+	fmt.Println("first token: ",token)
+	if err!=nil{
 		c.AbortWithStatus(401)
 		return
 	}
+	
 
 	// fmt.Println("token: ",token)
 	token = strings.TrimPrefix(token, "Bearer ")
@@ -24,7 +25,7 @@ func AdminAuthMiddleware(c *gin.Context) {
 	// fmt.Println("in middleware: ", token)
 
 	jwtToken, err := ValidateToken(token)
-	fmt.Println("token after validation ", jwtToken)
+	fmt.Println("token after validation ",jwtToken)
 	if err != nil {
 		c.AbortWithStatus(401)
 		return
@@ -60,7 +61,7 @@ func ValidateToken(token string) (*jwt.Token, error) {
 			return nil, fmt.Errorf("unexpected signing method:%v", t.Header["alg"])
 
 		}
-
+		
 		return []byte("adminsecret"), nil
 	})
 	return jwtToken, err

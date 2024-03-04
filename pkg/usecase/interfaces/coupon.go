@@ -6,8 +6,7 @@ import (
 )
 
 type CouponUsecase interface {
-	AddCoupon(coupon models.Coupons) error
+	Addcoupon(coupon models.Coupon) error
 	MakeCouponInvalid(id int) error
-	ReActivateCoupon(id int) error
-	GetAllCoupons() ([]domain.Coupons, error)
+	GetCoupons() ([]domain.Coupon, error)
 }

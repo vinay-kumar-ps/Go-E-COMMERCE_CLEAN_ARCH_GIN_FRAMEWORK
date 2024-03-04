@@ -1,85 +1,93 @@
 package routes
 
 import (
-	"ecommerce/pkg/api/handler"
 	"ecommerce/pkg/api/middleware"
+	"ecommerce/pkg/api/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
-// "golang.org/x/tools/go/callgraph/rta"
-// "golang.org/x/tools/go/callgraph/rta"
-
 func AdminRoutes(engine *gin.RouterGroup,
 	adminHandler *handler.AdminHandler,
-	inventoryHandler *handler.InventoryHandler,
-	userHandler *handler.UserHandler,
+	// userHandler *handlers.UserHandler,
 	categoryHandler *handler.CategoryHandler,
+	inventoryHandler *handler.InventoryHandler,
 	orderHandler *handler.OrderHandler,
-	couponHandler *handler.CouponHandler,
-	offerHandler *handler.OfferHandler) {
-
+	paymentHandler *handler.PaymentHandler,
+	offerHandler *handler.OfferHandler,
+	couponHandler *handler.CouponHandler) {
 	engine.POST("/adminlogin", adminHandler.LoginHandler)
-	// api := router.Group("/admin_panel", middleware.AuthorizationMiddleware)
-	// api.GET("users", adminHandler.GetUsers)
-
-	engine.Use(middleware.AdminAuthMiddleware)
 	{
-		usermanagement := engine.Group("/users")
-		{
-			usermanagement.GET("", adminHandler.GetUsers)
-			usermanagement.PUT("/block", adminHandler.BlockUser)
-			usermanagement.PUT("/unblock", adminHandler.UnBlockUser)
-		}
-		categorymanagement := engine.Group("/category")
-		{
-			categorymanagement.GET("", categoryHandler.GetCategory)
-			categorymanagement.POST("", categoryHandler.AddCategory)
-			categorymanagement.PUT("", categoryHandler.UpdateCategory)
-			categorymanagement.DELETE("", categoryHandler.DeleteCategory)
-		}
-		inventorymanagement := engine.Group("/inventories")
-		{
-			inventorymanagement.GET("", inventoryHandler.ListProductsForAdmin)
-			inventorymanagement.POST("", inventoryHandler.AddInventory)
-			inventorymanagement.DELETE("", inventoryHandler.DeleteInventory)
-			inventorymanagement.PUT("/details", inventoryHandler.EditInventoryDetails)
+		engine.Use(middleware.AdminAuthMiddleware)
 
-			inventorymanagement.PUT("/:id/stock", inventoryHandler.UpdateInventory)
-			inventorymanagement.PUT("/:id/image", inventoryHandler.UpdateProductImage)
-			// inventorymanagement.PUT("/id/details",inventoryHandler.UpdateProductDetails)
+		userManagement := engine.Group("/users")
+		{
+			userManagement.POST("/block", adminHandler.BlockUser)
+			userManagement.POST("/unblock", adminHandler.UnblockUser)
+			userManagement.GET("/getusers", adminHandler.GetUsers)
 		}
 
-		payment := engine.Group("/payment-method")
+		categoryManagement := engine.Group("/category")
 		{
-			payment.POST("", adminHandler.NewPaymentMethod)
-			payment.GET("", adminHandler.ListPaymentMethods)
-			payment.DELETE("", adminHandler.DeletePaymentMethod)
+			categoryManagement.GET("/categories", categoryHandler.Categories)
+			categoryManagement.POST("/add", categoryHandler.AddCategory)
+			categoryManagement.PATCH("/update", categoryHandler.UpdateCategory)
+			categoryManagement.DELETE("/delete", categoryHandler.DeleteCategory)
 		}
 
-		orders := engine.Group("/orders")
+		inventoryManagement := engine.Group("/inventories")
 		{
-			orders.PUT("/status", orderHandler.EditOrderStatus)
-			orders.PUT("/payment-status", orderHandler.MakePaymentStatusAsPaid)
-			orders.GET("", orderHandler.AdminOrders)
-			orders.GET("/:id", orderHandler.GetIndividualOrderDetails)
+			// inventoryManagement.GET("", inventoryHandler.ListProdutcs)
+			// inventoryManagement.GET("/details", inventoryHandler.ShowIndividualProducts)
+			inventoryManagement.POST("/add", inventoryHandler.AddInventory)
+			inventoryManagement.POST("/add-image", inventoryHandler.AddImage)
+			inventoryManagement.PATCH("/update", inventoryHandler.UpdateInventory)
+			inventoryManagement.PATCH("/update-image", inventoryHandler.UpdateImage)
+			inventoryManagement.DELETE("/delete-image", inventoryHandler.DeleteImage)
+			inventoryManagement.DELETE("/delete", inventoryHandler.DeleteInventory)
 		}
 
-		coupons := engine.Group("/coupons")
+		orderManagement := engine.Group("/orders")
 		{
-			coupons.GET("", couponHandler.GetAllCoupons)
-			coupons.POST("", couponHandler.CreateNewCoupon)
-			coupons.DELETE("", couponHandler.MakeCOuponInvalid)
-			//reactivation of coupons
-			coupons.PUT("", couponHandler.ReActivateCoupon)
+			orderManagement.GET("", orderHandler.AdminOrders)
+			orderManagement.PATCH("/edit/status", orderHandler.EditOrderStatus)
+			orderManagement.PATCH("/edit/mark-as-paid", orderHandler.MarkAsPaid)
 		}
 
-		offers := engine.Group("/offers")
+		paymentManangement := engine.Group("/paymentmethods")
 		{
-			offers.GET("", offerHandler.GetOffers)
-			offers.POST("", offerHandler.AddNewOffer)
-			offers.DELETE("", offerHandler.MakeOfferExpire)
+			paymentManangement.GET("/", paymentHandler.GetPaymentMethods)
+			paymentManangement.POST("/add", paymentHandler.AddNewPaymentMethod)
+			paymentManangement.DELETE("/delete", paymentHandler.RemovePaymentMethod)
+		}
+
+		offerManagement := engine.Group("/offers")
+		{
+			offerManagement.GET("", offerHandler.Offers)
+			offerManagement.POST("/create", offerHandler.AddOffer)
+			offerManagement.POST("/expire", offerHandler.ExpireValidity)
+		}
+
+		couponManagement := engine.Group("/coupons")
+		{
+			couponManagement.GET("", couponHandler.Coupons)
+			couponManagement.POST("/create", couponHandler.CreateNewCoupon)
+			couponManagement.POST("/expire", couponHandler.MakeCouponInvalid)
+		}
+		salesManagement := engine.Group("/sales")
+		{
+			salesManagement.GET("/daily", orderHandler.AdminSalesDailyReport)
+			salesManagement.GET("/weekly", orderHandler.AdminSalesWeeklyReports)
+			salesManagement.GET("/monthly", orderHandler.AdminSalesMonthlyReport)
+			salesManagement.GET("/annual", orderHandler.AdminSalesAnnualReport)
+			salesManagement.POST("/custom", orderHandler.AdminSaleCustomReport)
+		}
+		productsManagement := engine.Group("/products")
+		{
+			productsManagement.GET("", inventoryHandler.AdminListProdutcs)
+			productsManagement.GET("/details", inventoryHandler.ShowIndividualProducts)
+			productsManagement.GET("/search", inventoryHandler.SearchProducts)
+			productsManagement.GET("/category", inventoryHandler.GetCategoryProducts)
 		}
 	}
-
 }

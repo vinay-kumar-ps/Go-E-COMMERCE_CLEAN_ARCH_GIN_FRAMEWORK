@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"ecommerce/pkg/repository/interfaces"
+	"ecommerce/pkg/utils/models"
 
 	"gorm.io/gorm"
 )
@@ -9,35 +11,65 @@ type paymentRepository struct {
 	DB *gorm.DB
 }
 
-func NewPaymentRepository(db *gorm.DB) *paymentRepository {
+// constructor function
+
+func NewPaymentRepository(DB *gorm.DB) interfaces.PaymentRepository {
 	return &paymentRepository{
-		DB: db,
+		DB: DB,
 	}
 }
 
-func (p *paymentRepository) FindUsername(user_id int) (string, error) {
-	var name string
-	if err := p.DB.Raw("SELECT name FROM users WHERE id=?", user_id).Scan(&name).Error; err != nil {
+func (pr *paymentRepository) AddNewPaymentMethod(paymentMethod string) error {
+	query := `INSERT INTO payment_methods(payment_method)VALUES(?)`
+
+	if err := pr.DB.Exec(query, paymentMethod).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pr *paymentRepository) RemovePaymentMethod(paymentMethodId int) error {
+	query := `DELETE FROM payment_methods WHERE id=?`
+
+	if err := pr.DB.Exec(query, paymentMethodId).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pr *paymentRepository) GetPaymentMethods() ([]models.PaymentMethod, error) {
+	var paymentMethods []models.PaymentMethod
+	err := pr.DB.Raw("SELECT * FROM payment_methods").Scan(&paymentMethods).Error
+	if err != nil {
+		return []models.PaymentMethod{}, err
+	}
+	return paymentMethods, nil
+}
+
+func (pr *paymentRepository) FindUsername(user_id int) (string, error) {
+	var userName string
+	err := pr.DB.Raw("SELECT name FROM users WHERE id=?", user_id).Scan(&userName).Error
+	if err != nil {
 		return "", err
 	}
-
-	return name, nil
+	return userName, nil
 }
 
-func (p *paymentRepository) FindPrice(order_id int) (float64, error) {
+func (pr *paymentRepository) FindPrice(order_id int) (float64, error) {
 	var price float64
-	if err := p.DB.Raw("SELECT final_price FROM orders WHERE id=?", order_id).Scan(&price).Error; err != nil {
+
+	err := pr.DB.Raw("SELECT price FROM orders WHERE id=?", order_id).Scan(&price).Error
+	if err != nil {
 		return 0, err
 	}
-
 	return price, nil
 }
 
-func (p *paymentRepository) UpdatePaymentDetails(orderID, paymentID, razorID string) error {
+func (pr *paymentRepository) UpdatePaymentDetails(orderId, paymentId, razorId string) error {
 	status := "PAID"
-	if err := p.DB.Exec(`UPDATE orders SET payment_status = $1 WHERE id = $2`, status, orderID).Error; err != nil {
+	query := `UPDATE orders SET payment_status=$1,payment_id=$3 WHERE id=$2`
+	if err := pr.DB.Exec(query, status, orderId, paymentId).Error; err != nil {
 		return err
 	}
-
 	return nil
 }

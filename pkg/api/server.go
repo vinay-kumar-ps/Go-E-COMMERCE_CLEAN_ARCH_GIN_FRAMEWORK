@@ -1,12 +1,13 @@
 package api
 
 import (
+	_ "ecommerce/cmd/api/docs"
 	handler "ecommerce/pkg/api/handler"
+
 	"ecommerce/pkg/routes"
-	"log"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
+	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
@@ -15,39 +16,31 @@ type ServerHTTP struct {
 	engine *gin.Engine
 }
 
-func NewServerHTTP(userHandler *handler.UserHandler,
-	adminHandler *handler.AdminHandler,
-	categoryHandler *handler.CategoryHandler,
+func NewServerHttp(categoryHandler *handler.CategoryHandler,
 	inventoryHandler *handler.InventoryHandler,
+	userHandler *handler.UserHandler,
 	otpHandler *handler.OtpHandler,
-	orderHandler *handler.OrderHandler,
+	adminHandler *handler.AdminHandler,
 	cartHandler *handler.CartHandler,
-	couponHandler *handler.CouponHandler,
+	orderHandler *handler.OrderHandler,
 	paymentHandler *handler.PaymentHandler,
-	offerhandler *handler.OfferHandler,
-	wishlistHandler *handler.WishlistHandler) *ServerHTTP {
-
+	wishlistHandler *handler.WishlistHandler,
+	offerHandler *handler.OfferHandler,
+	couponHandler *handler.CouponHandler) *ServerHTTP {
 	engine := gin.New()
-
-	engine.LoadHTMLFiles("pkg/templates/*.html")
-
-	// Use logger from Gin
 	engine.Use(gin.Logger())
+	engine.LoadHTMLFiles("pkg/templates/*.html")
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	//Swagger docs
-	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	routes.UserRoutes(engine.Group("/users"), userHandler, otpHandler, inventoryHandler, cartHandler, orderHandler, couponHandler, paymentHandler, wishlistHandler)
+	routes.AdminRoutes(engine.Group("/admin"), adminHandler, categoryHandler, inventoryHandler, orderHandler, paymentHandler, offerHandler, couponHandler)
+	routes.InventoryRoutes(engine.Group("/products"), inventoryHandler)
 
-	engine.GET("/validate-token", adminHandler.ValidateRefreshTokenAndCreateNewAccess)
-
-	routes.UserRoutes(engine.Group("/users"), userHandler, otpHandler, inventoryHandler, orderHandler, cartHandler, paymentHandler, wishlistHandler, categoryHandler, couponHandler)
-	routes.AdminRoutes(engine.Group("/admin"), adminHandler, inventoryHandler, userHandler, categoryHandler, orderHandler, couponHandler, offerhandler)
-
-	return &ServerHTTP{engine: engine}
+	return &ServerHTTP{
+		engine: engine,
+	}
 }
 
 func (sh *ServerHTTP) Start() {
-	err := sh.engine.Run(":3000")
-	if err != nil {
-		log.Fatal("gin engine couldn't start")
-	}
+	sh.engine.Run(":8082")
 }

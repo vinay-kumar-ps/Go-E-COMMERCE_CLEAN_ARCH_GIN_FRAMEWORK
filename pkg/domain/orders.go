@@ -1,55 +1,73 @@
 package domain
 
-import "gorm.io/gorm"
+import (
+	"time"
 
-type PaymentMethod struct {
-	ID           uint   `gorm:"primarykey"`
-	Payment_Name string `json:"payment_name"`
-	IsDeleted    bool   `json:"is_deleted" gorm:"default:false"`
-}
+	"gorm.io/gorm"
+)
 
+// Order of user
 type Order struct {
 	gorm.Model
-	UserID          uint          `json:"user_id" gorm:"not null"`
-	Users           Users         `json:"-" gorm:"foreignkey:UserID"`
-	AddressID       uint          `json:"address_id" gorm:"not null"`
+	ID              int           `json:"id" gorm:"primarykey;autoIncrement"`
+	UserID          int           `json:"user_id" gorm:"not null"`
+	User            User          `json:"-" gorm:"foreignkey:UserID"`
+	AddressID       int           `json:"address_id" gorm:"not null"`
 	Address         Address       `json:"-" gorm:"foreignkey:AddressID"`
-	PaymentMethodID uint          `json:"paymentmethod_id"`
+	PaymentMethodID int           `json:"paymentmethod_id" gorm:"default:1"`
 	PaymentMethod   PaymentMethod `json:"-" gorm:"foreignkey:PaymentMethodID"`
-	CouponUsed      string        `json:"coupon_used" gorm:"default:null"`
-	FinalPrice      float64       `json:"price"`
-	OrderStatus     string        `json:"order_status" gorm:"order_status:4;default:'PENDING';check:order_status IN ('PENDING', 'SHIPPED','DELIVERED','CANCELED','RETURNED')"`
-	PaymentStatus   string        `json:"payment_status" gorm:"payment_status:2;default:'NOT PAID';check:payment_status IN ('PAID', 'NOT PAID')"`
+	PaymentID       string        `json:"payment_id"`
+	Price           float64       `json:"price"`
+	OrderedAt       time.Time     `json:"ordered_at"`
+	OrderStatus     string        `json:"order_status" gorm:"order_status:4;default:'PENDING';check:order_status IN('PENDING','SHIPPED','DELIVERED','CANCELED','RETURNED')"`
+	PaymentStatus   string        `json:"payment_status" gorm:"default:'PENDING'"`
 }
+
+// product details of the order
 
 type OrderItem struct {
-	ID          uint        `json:"id" gorm:"primaryKey;autoIncrement"`
-	OrderID     uint        `json:"order_id"`
-	Order       Order       `json:"-" gorm:"foreignkey:OrderID;constraint:OnDelete:CASCADE"`
-	InventoryID uint        `json:"inventory_id"`
-	Inventories Inventories `json:"-" gorm:"foreignkey:InventoryID"`
-	Quantity    int         `json:"quantity"`
-	TotalPrice  float64     `json:"total_price"`
+	ID          int       `json:"id" gorm:"primarykey;autoIncrement"`
+	OrderID     int       `json:"order_id"`
+	Order       Order     `json:"-" gorm:"foreignkey:OrderID"`
+	InventoryID int       `json:"inventory_id"`
+	Inventory   Inventory `json:"-" gorm:"foreignkey:InventoryID"`
+	Quantity    int       `json:"quantity"`
+	TotalPrice  float64   `json:"total_price"`
 }
 
-type AdminOrdersResponse struct {
+// Order details with order status
+
+type AdminOrderResponse struct {
 	Pending   []OrderDetails
 	Shipped   []OrderDetails
 	Delivered []OrderDetails
-	Canceled  []OrderDetails
 	Returned  []OrderDetails
+	Canceled  []OrderDetails
 }
 
+// Details of order
+
 type OrderDetails struct {
-	ID            int     `json:"id" gorm:"id"`
-	Username      string  `json:"name"`
+	ID            int     `json:"id" gorm:"column:order_id"`
+	Username      string  `json:"username"`
 	Address       string  `json:"address"`
-	PaymentMethod string  `json:"payment_method" gorm:"payment_method"`
+	PaymentMethod string  `json:"paymentmethod"`
 	Total         float64 `json:"total"`
 }
 
-type OrderDetailsWithImages struct {
-	OrderDetails  Order
-	Images        []string
-	PaymentMethod string
+type PaymentMethod struct {
+	ID           int    `json:"id" gorm:"primarykey"`
+	PaymenMethod string `json:"paymentmethod" validate:"required" gorm:"unique"`
+}
+
+type SalesReport struct {
+	Orders       []Order
+	TotalRevenue float64
+	TotalOrders  int
+	BestSellers  []string
+}
+
+type ProductReport struct {
+	InventoryID int
+	Quantity    int
 }

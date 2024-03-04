@@ -10,61 +10,77 @@ import (
 	"gorm.io/gorm"
 )
 
-func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
-	// Construct the connection string using the configuration
-	psqlInfo := fmt.Sprintf("host=%s user=%s dbname=%s port=%s password=%s", cfg.DBHost, cfg.DBUser, cfg.DBName, cfg.DBPort, cfg.DBPassword)
+func ConnectDB(cfg config.Config) (*gorm.DB, error) {
+	psqlInfo := fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s", cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBPort, cfg.DBName)
 
-	// Open a connection to the database
-	db, dbErr := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{SkipDefaultTransaction: true})
-	if dbErr != nil {
-		return nil, fmt.Errorf("failed to connect to the database: %v", dbErr)
+	db, dbErr := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
+
+	if err:=db.AutoMigrate(&domain.Inventory{});err!=nil{
+		return db,err
 	}
-
-	// Auto migrate the database tables
-	if err := db.AutoMigrate(
-		&domain.Inventories{},
-		&domain.Category{},
-		&domain.Users{},
-		&domain.Admin{},
-		domain.Cart{},
-		domain.Address{},
-		domain.Order{},
-		domain.OrderItem{},
-		domain.PaymentMethod{},
-		domain.Coupons{},
-		domain.Wallet{},
-		domain.Offer{},
-		domain.LineItems{},
-		domain.Wishlist{},
-	); err != nil {
-		return db, fmt.Errorf("failed to auto-migrate database tables: %v", err)
+	if err:=db.AutoMigrate(&domain.Category{});err!=nil{
+		return db,err
 	}
-
-	// Check if admin user exists and create one if not
-	if err := CheckAndCreateAdmin(db); err != nil {
-		return db, fmt.Errorf("failed to check and create admin user: %v", err)
+	if err:=db.AutoMigrate(&domain.Admin{});err!=nil{
+		return db,err
 	}
+	if err:=db.AutoMigrate(&domain.User{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Cart{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Wishlist{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Address{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Order{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.OrderItem{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.LineItems{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.PaymentMethod{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Offer{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Coupon{});err!=nil{
+		return db,err
+	}
+	if err:=db.AutoMigrate(&domain.Wallet{});err!=nil{
+		return db,err
+	}
+	
 
-	return db, nil
+	if err:=CheckAndCreateAdmin(db);err!=nil{
+		return db,err
+	}
+	return db, dbErr
 }
 
-func CheckAndCreateAdmin(db *gorm.DB) error {
+func CheckAndCreateAdmin(db *gorm.DB)error {
 	var count int64
 	db.Model(&domain.Admin{}).Count(&count)
-
-	fmt.Println("error occured here")
-	
 	if count == 0 {
-		password := "password123"
-		hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+		password := "zorothehero"
+		hashedPass, err := bcrypt.GenerateFromPassword([]byte(password),10)
 		if err != nil {
 			fmt.Println("check and create admin error")
 			return err
 		}
 		admin := domain.Admin{
 			ID:       1,
-			Name:     "admin",
-			UserName: "animestore@gmal.com",
+			Name: "admin",
+			UserName: "animestore@gmail.com",
 			Password: string(hashedPass),
 		}
 		db.Create(&admin)

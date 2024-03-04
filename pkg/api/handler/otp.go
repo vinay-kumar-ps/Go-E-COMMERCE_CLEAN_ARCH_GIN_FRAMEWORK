@@ -9,13 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
 type OtpHandler struct {
-	otpUseCase services.OtpUseCase
+	otpUsecase services.OtpUsecase
 }
 
-func NewOtpHandler(useCase services.OtpUseCase) *OtpHandler {
+// Constrctor function
+func NewOtpHandler(otpUsecase services.OtpUsecase) *OtpHandler {
 	return &OtpHandler{
-		otpUseCase: useCase,
+		otpUsecase: otpUsecase,
 	}
 }
 
@@ -28,23 +30,21 @@ func NewOtpHandler(useCase services.OtpUseCase) *OtpHandler {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/otplogin [post]
-func (ot *OtpHandler) SendOTP(c *gin.Context) {
-
+func (otH *OtpHandler) SendOTP(c *gin.Context) {
 	var phone models.OTPData
-	if err := c.BindJSON(&phone); err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
-	}
 
-	err := ot.otpUseCase.SendOTP(phone.PhoneNumber)
-	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not send OTP", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+	if err := c.BindJSON(&phone); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK, "OTP sent successfully", nil, nil)
+	if err := otH.otpUsecase.SendOTP(phone.PhoneNumber); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Could not sent OTP", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "OTP send successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
-
 }
 
 // @Summary		Verify OTP
@@ -56,23 +56,20 @@ func (ot *OtpHandler) SendOTP(c *gin.Context) {
 // @Success		200	{object}	response.Response{}
 // @Failure		500	{object}	response.Response{}
 // @Router			/users/verifyotp [post]
-func (ot *OtpHandler) VerifyOTP(c *gin.Context) {
-
+func (otH *OtpHandler) VerifyOTP(c *gin.Context) {
 	var code models.VerifyData
 	if err := c.BindJSON(&code); err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+		errRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-
-	users, err := ot.otpUseCase.VerifyOTP(code)
+	users, err := otH.otpUsecase.VerifyOTP(code)
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "Could not verify OTP", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't verify OTP", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-
-	successRes := response.ClientResponse(http.StatusOK, "Successfully verified OTP", users, nil)
+	successRes := response.ClientResponse(http.StatusOK, "Verifyed OTP", users, nil)
+	c.SetCookie("Authorization", users.Token, 3600, "", "", true, false)
 	c.JSON(http.StatusOK, successRes)
-
 }

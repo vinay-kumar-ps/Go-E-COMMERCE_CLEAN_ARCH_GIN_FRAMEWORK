@@ -3,143 +3,125 @@ package usecase
 import (
 	interfaces "ecommerce/pkg/repository/interfaces"
 	"ecommerce/pkg/utils/models"
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/razorpay/razorpay-go"
 )
 
 type paymentUsecase struct {
-	repository interfaces.PaymentRepository
+	paymentRepo interfaces.PaymentRepository
+	userRepo    interfaces.UserRepository
 }
 
-func NewPaymentUseCase(repo interfaces.PaymentRepository) *paymentUsecase {
+// Constructor function
+func NewPaymentUsecase(paymentRepo interfaces.PaymentRepository, userRepo interfaces.UserRepository) *paymentUsecase {
 	return &paymentUsecase{
-		repository: repo,
+		paymentRepo: paymentRepo,
+		userRepo:    userRepo,
 	}
 }
 
-func (p *paymentUsecase) MakePaymentRazorPay(orderID string, userID string) (models.OrderPaymentDetails, error) {
+func (payU *paymentUsecase) AddNewPaymentMethod(paymentMethod string) error {
+	if paymentMethod == "" {
+		return errors.New("enter payment method")
+	}
+	if err := payU.paymentRepo.AddNewPaymentMethod(paymentMethod); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (payU *paymentUsecase) RemovePaymentMethod(paymentMethodID int) error {
+	if paymentMethodID == 0 {
+		return errors.New("enter method id")
+	}
+	if err := payU.paymentRepo.RemovePaymentMethod(paymentMethodID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (payU *paymentUsecase) GetPaymentMethods() ([]models.PaymentMethod, error) {
+	paymentMethods, err := payU.paymentRepo.GetPaymentMethods()
+	if err != nil {
+		return []models.PaymentMethod{}, err
+	}
+	return paymentMethods, nil
+}
+
+func (payU *paymentUsecase) MakePaymentRazorPay(orderID string, userID int) (models.OrderPaymentDetails, error) {
 	var orderDetails models.OrderPaymentDetails
-	//get orderid
-	newid, err := strconv.Atoi(orderID)
+
+	// Get order id
+	orderId, err := strconv.Atoi(orderID)
 	if err != nil {
 		return models.OrderPaymentDetails{}, err
 	}
-	orderDetails.OrderID = newid
+	orderDetails.OrderID = orderId
+	orderDetails.UserID = userID
 
-	//get userid
-	newuserid, err := strconv.Atoi(userID)
+	// Get username
+	username, err := payU.paymentRepo.FindUsername(userID)
 	if err != nil {
 		return models.OrderPaymentDetails{}, err
 	}
-
-	orderDetails.UserID = newuserid
-
-	//get username
-	username, err := p.repository.FindUsername(newuserid)
-	if err != nil {
-		return models.OrderPaymentDetails{}, err
-	}
-
 	orderDetails.Username = username
 
-	//get total
-	newfinal, err := p.repository.FindPrice(newid)
+	// Get total
+	total, err := payU.paymentRepo.FindPrice(orderId)
 	if err != nil {
 		return models.OrderPaymentDetails{}, err
 	}
+	orderDetails.FinalPrice = total
 
-	orderDetails.FinalPrice = newfinal
-
-	client := razorpay.NewClient("rzp_test_pfmFeCViv6CU5K", "TWCh1tyyZZsIxjYSOmmRrLLg")
+	// need to add key and secret
+	client := razorpay.NewClient("key", "secret")
 
 	data := map[string]interface{}{
 		"amount":   int(orderDetails.FinalPrice) * 100,
 		"currency": "INR",
-		"receipt":  "some_receipt_id",
+		"receipt":  "some receipt id",
 	}
+
+	fmt.Println("razorpay::91", orderDetails, data)
 
 	body, err := client.Order.Create(data, nil)
 	if err != nil {
-		return models.OrderPaymentDetails{}, nil
+		fmt.Println(err)
+		return models.OrderPaymentDetails{}, err
 	}
+	razorpayOrderId := body["id"].(int)
+	orderDetails.RazorID = razorpayOrderId
 
-	razorPayOrderID := body["id"].(string)
-
-	orderDetails.Razor_id = razorPayOrderID
+	fmt.Println("razorpay::100", orderDetails)
 
 	return orderDetails, nil
 }
 
-func (p *paymentUsecase) VerifyPayment(paymentID string, razorID string, orderID string) error {
+func (payU *paymentUsecase) VerifyPayment(paymentID string, razorID string, orderID string) error {
 
-	err := p.repository.UpdatePaymentDetails(orderID, paymentID, razorID)
-	if err != nil {
+	if err := payU.paymentRepo.UpdatePaymentDetails(orderID, paymentID, razorID); err != nil {
 		return err
 	}
 
+	// Clear cart
+	// orderIdInt, err := strconv.Atoi(orderID)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// userId, err := payU.userRepo.FindUserIDByOrderID(orderIdInt)
+	// if err != nil {
+	// 	return err
+	// }
+	// cartId, err := payU.userRepo.GetCartID(userId)
+	// if err != nil {
+	// 	return err
+	// }
+	// if err := payU.userRepo.ClearCart(cartId); err != nil {
+	// 	return err
+	// }
 	return nil
-
-}
-
-func (p *paymentUsecase) UseWallet(orderID string, userID string) (models.OrderPaymentDetails, error) {
-	var orderDetails models.OrderPaymentDetails
-	//get orderid
-	newid, err := strconv.Atoi(orderID)
-	if err != nil {
-		return models.OrderPaymentDetails{}, err
-	}
-	orderDetails.OrderID = newid
-
-	//get userid
-	newuserid, err := strconv.Atoi(userID)
-	if err != nil {
-		return models.OrderPaymentDetails{}, err
-	}
-
-	orderDetails.UserID = newuserid
-
-	//get username
-	username, err := p.repository.FindUsername(newuserid)
-	if err != nil {
-		return models.OrderPaymentDetails{}, err
-	}
-
-	orderDetails.Username = username
-
-	//get total
-	newfinal, err := p.repository.FindPrice(newid)
-	if err != nil {
-		return models.OrderPaymentDetails{}, err
-	}
-
-	//retrieve wallet of the user
-
-	//check if user have enough balance for the payment of newfinal
-
-	//if have sufficient balance then reduce the finalPrice
-
-	//clear the wallet
-
-	//then as usual pay the remaining amount using razorpay and then record payment details in database
-
-	orderDetails.FinalPrice = newfinal
-
-	client := razorpay.NewClient("rzp_test_pfmFeCViv6CU5K", "TWCh1tyyZZsIxjYSOmmRrLLg")
-
-	data := map[string]interface{}{
-		"amount":   int(orderDetails.FinalPrice) * 100,
-		"currency": "INR",
-		"receipt":  "some_receipt_id",
-	}
-	body, err := client.Order.Create(data, nil)
-	if err != nil {
-		return models.OrderPaymentDetails{}, nil
-	}
-
-	razorPayOrderID := body["id"].(string)
-
-	orderDetails.Razor_id = razorPayOrderID
-
-	return orderDetails, nil
 }

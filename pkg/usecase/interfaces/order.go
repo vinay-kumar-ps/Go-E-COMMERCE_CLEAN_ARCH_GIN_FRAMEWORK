@@ -6,13 +6,17 @@ import (
 )
 
 
-type OrderUseCase interface {
-	GetOrders(id int) ([]domain.OrderDetailsWithImages, error)
-	OrderItemsFromCart(userid int, addressid int, paymentid int, couponID int) error
-	CancelOrder(id int) error
+type OrderUsecase interface {
+	GetOrders(id, page, limit int) ([]domain.Order, error)
+	OrderItemsFromCart(userid int, addressid int, paymentid int, couponid int) error
+	CancelOrder(id, orderid int) error
 	EditOrderStatus(status string, id int) error
-	AdminOrders() (domain.AdminOrdersResponse, error)
+	MarkAsPaid(orderID int) error
+	AdminOrders() (domain.AdminOrderResponse, error)
+	DailyOrders() (domain.SalesReport, error)
+	WeeklyOrders() (domain.SalesReport, error)
+	MonthlyOrders() (domain.SalesReport, error)
+	AnnualOrders() (domain.SalesReport, error)
+	CustomDateOrders(dates models.CustomDates) (domain.SalesReport, error)
 	ReturnOrder(id int) error
-	MakePaymentStatusAsPaid(id int) error
-	GetIndividualOrderDetails(id int) (models.IndividualOrderDetails, error)
 }

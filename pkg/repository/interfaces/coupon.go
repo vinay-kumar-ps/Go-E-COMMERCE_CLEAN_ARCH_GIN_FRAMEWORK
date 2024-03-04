@@ -5,10 +5,10 @@ import(
 	"ecommerce/pkg/utils/models"
 	)
 
-type CouponRepository interface {
-	AddCoupon(models.Coupons) error
-	MakeCouponInvalid(id int) error
-	ReActivateCoupon(id int) error
-	FindCouponDetails(couponID int) (domain.Coupons, error)
-	GetAllCoupons() ([]domain.Coupons, error)
-}
+	type CouponRepository interface{
+		AddCoupon(models.Coupon)error
+		MakeCouponInvalid(id int)error
+		FindCouponDetails(couponId int)(domain.Coupon,error)
+		GetCoupons()([]domain.Coupon,error)
+		ValidateCoupon(coupon string)(bool,error)
+	}

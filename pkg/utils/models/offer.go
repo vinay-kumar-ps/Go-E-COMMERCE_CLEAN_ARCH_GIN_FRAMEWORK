@@ -1,6 +1,6 @@
 package models
 
-type OfferMaking struct {
+type CreateOffer struct{
 	CategoryID int `json:"category_id"`
 	Discount   int `json:"discount"`
 }

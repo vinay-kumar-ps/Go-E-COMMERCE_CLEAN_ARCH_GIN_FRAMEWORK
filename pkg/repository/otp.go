@@ -11,30 +11,30 @@ type otpRepository struct {
 	DB *gorm.DB
 }
 
+// constructor function
+
 func NewOtpRepository(DB *gorm.DB) interfaces.OtpRepository {
 	return &otpRepository{
 		DB: DB,
 	}
 }
 
-func (ot *otpRepository) FindUserByMobileNumber(phone string) bool {
-
+func (otr *otpRepository) FindUserByMobileNumber(phone string) bool {
 	var count int
-	if err := ot.DB.Raw("select count(*) from users where phone = ?", phone).Scan(&count).Error; err != nil {
+
+	err := otr.DB.Raw("SELECT COUNT(*) FROM users WHERE phone=?", phone).Scan(&count).Error
+	if err != nil {
 		return false
 	}
-
 	return count > 0
-
 }
 
-func (ot *otpRepository) UserDetailsUsingPhone(phone string) (models.UserDetailsResponse, error) {
+func (otr *otpRepository) UserDetailsUsingPhone(phone string) (models.UserDetailsResponse, error) {
+	var userDetails models.UserDetailsResponse
 
-	var usersDetails models.UserDetailsResponse
-	if err := ot.DB.Raw("select * from users where phone = ?", phone).Scan(&usersDetails).Error; err != nil {
+	err := otr.DB.Raw("SELECT * FROM users WHERE phone=?", phone).Scan(&userDetails).Error
+	if err != nil {
 		return models.UserDetailsResponse{}, err
 	}
-
-	return usersDetails, nil
-
+	return userDetails, nil
 }

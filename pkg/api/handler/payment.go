@@ -2,65 +2,120 @@ package handler
 
 import (
 	services "ecommerce/pkg/usecase/interfaces"
-	 "ecommerce/pkg/utils/response"
+	"ecommerce/pkg/utils/response"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
+
 type PaymentHandler struct {
-	usecase services.PaymentUseCase
+	paymentUsecase services.PaymentUsecase
 }
 
-func NewPaymentHandler(use services.PaymentUseCase) *PaymentHandler {
+// Constructor function
+
+func NewPaymentHandler(payUsecase services.PaymentUsecase) *PaymentHandler {
 	return &PaymentHandler{
-		usecase: use,
+		paymentUsecase: payUsecase,
 	}
 }
 
-func (p *PaymentHandler) MakePaymentRazorPay(c *gin.Context) {
+// @Summary		Add new payment method
+// @Description	admin can add a new payment method
+// @Tags			Admin
+// @Produce		    json
+// @Param			paymentMethod	query  string 	true	"Payment Method"
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/paymentmethods/add [post]
+func (payH *PaymentHandler) AddNewPaymentMethod(c *gin.Context) {
+	method := c.Query("payment_method")
 
-	orderID := c.Query("id")
-	userID := c.Query("user_id")
-
-	orderDetail, err := p.usecase.MakePaymentRazorPay(orderID, userID)
-	if err != nil {
-		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not generate order details", nil, err.Error())
-		c.JSON(http.StatusInternalServerError, errorRes)
+	if err := payH.paymentUsecase.AddNewPaymentMethod(method); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't add new payment method", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
-
-	c.HTML(http.StatusOK, "razorpay.html", orderDetail)
-}
-
-func (p *PaymentHandler) VerifyPayment(c *gin.Context) {
-
-	orderID := c.Query("order_id")
-	paymentID := c.Query("payment_id")
-	razorID := c.Query("razor_id")
-
-	err := p.usecase.VerifyPayment(paymentID, razorID, orderID)
-	if err != nil {
-		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not update payment details", nil, err.Error())
-		c.JSON(http.StatusInternalServerError, errorRes)
-		return
-	}
-
-	successRes := response.ClientResponse(http.StatusOK, "Successfully updated payment details", nil, nil)
+	successRes := response.ClientResponse(http.StatusOK, "successfully added payment method", nil, nil)
 	c.JSON(http.StatusOK, successRes)
-
 }
 
-func (p *PaymentHandler) MakePaymentFromWallet(c *gin.Context) {
-
-	orderID := c.Query("order_id")
-	userID := c.Query("user_id")
-
-	orderDetail, err := p.usecase.UseWallet(orderID, userID)
+// @Summary		Remove payment method
+// @Description	admin can remove a  payment method
+// @Tags			Admin
+// @Produce		    json
+// @Param			paymentMethodID	query  int 	true	"Payment Method ID"
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/paymentmethods/remove [delete]
+func (payH *PaymentHandler) RemovePaymentMethod(c *gin.Context) {
+	methodId, err := strconv.Atoi(c.Query("payment_method_id"))
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not make payment from wallet", nil, err.Error())
-		c.JSON(http.StatusInternalServerError, errorRes)
+		errRes := response.ClientResponse(http.StatusBadRequest, "conversion failed", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	if err := payH.paymentUsecase.RemovePaymentMethod(methodId); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "payment method removal failed", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 
-	c.HTML(http.StatusOK, "razorpay.html", orderDetail)
+	successRes := response.ClientResponse(http.StatusOK, "payment method removed successfully", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+// @Summary		Get payment methods
+// @Description	admin can get all  payment methods
+// @Tags			Admin
+// @Produce		    json
+// @Success		200	{object}	response.Response{}
+// @Failure		500	{object}	response.Response{}
+// @Router			/admin/paymentmethods [get]
+func (payH *PaymentHandler) GetPaymentMethods(c *gin.Context) {
+	paymentMethods, err := payH.paymentUsecase.GetPaymentMethods()
+
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't get payment methods", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "successfully collected payment methods", paymentMethods, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (payH *PaymentHandler) MakePaymentRazorPay(c *gin.Context) {
+	orderId := c.Query("id")
+	userId, err := strconv.Atoi(c.Query("user_id"))
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "check path paremeter(user id)", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	payDetails, err := payH.paymentUsecase.MakePaymentRazorPay(orderId, userId)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't generate order details", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	c.HTML(http.StatusOK, "razorpay.html", payDetails)
+}
+
+func (payH *PaymentHandler) VerifyPayment(c *gin.Context) {
+	paymentId := c.Query("payment_id")
+	razorId := c.Query("razor_id")
+	orderId := c.Query("order_id")
+
+	if err := payH.paymentUsecase.VerifyPayment(paymentId, razorId, orderId); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "couldn't update payment details", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "successfully updated payment details", nil, nil)
+	c.JSON(http.StatusOK, successRes)
 }

@@ -2,7 +2,7 @@ package usecase
 
 import (
 	config "ecommerce/pkg/config"
-	helper_interfaces "ecommerce/pkg/helper/interface"
+	"ecommerce/pkg/helper"
 	interfaces "ecommerce/pkg/repository/interfaces"
 	services "ecommerce/pkg/usecase/interfaces"
 	"ecommerce/pkg/utils/models"
@@ -11,66 +11,54 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-type otpUseCase struct {
-	cfg           config.Config
-	otpRepository interfaces.OtpRepository
-	helper        helper_interfaces.Helper
+type otpUsecase struct {
+	cfg     config.Config
+	otpRepo interfaces.OtpRepository
 }
 
-func NewOtpUseCase(cfg config.Config, repo interfaces.OtpRepository, h helper_interfaces.Helper) services.OtpUseCase {
-	return &otpUseCase{
-		cfg:           cfg,
-		otpRepository: repo,
-		helper:        h,
+// constructor function
+func NewOtpUsecase(cfg config.Config, otpRepo interfaces.OtpRepository) services.OtpUsecase {
+	return &otpUsecase{
+		cfg:     cfg,
+		otpRepo: otpRepo,
 	}
 }
 
-func (ot *otpUseCase) SendOTP(phone string) error {
-
-	ok := ot.otpRepository.FindUserByMobileNumber(phone)
+func (otU *otpUsecase) SendOTP(phone string) error {
+	ok := otU.otpRepo.FindUserByMobileNumber(phone)
 	if !ok {
-		return errors.New("the user does not exist")
+		return errors.New("phone number not found")
 	}
-
-	ot.helper.TwilioSetup(ot.cfg.ACCOUNTSID, ot.cfg.AUTHTOKEN)
-	_, err := ot.helper.TwilioSendOTP(phone, ot.cfg.SERVICESID)
+	helper.TwilioSetup(otU.cfg.ACCOUNTSID, otU.cfg.AUTHTOKEN)
+	_, err := helper.TwilioSendOTP(phone, otU.cfg.SERVICEID)
 	if err != nil {
-		return errors.New("error ocurred while generating OTP")
+		return errors.New("error occured while generating OTP")
 	}
-
 	return nil
-
 }
 
-func (ot *otpUseCase) VerifyOTP(code models.VerifyData) (models.TokenUsers, error) {
-
-	ot.helper.TwilioSetup(ot.cfg.ACCOUNTSID, ot.cfg.AUTHTOKEN)
-	err := ot.helper.TwilioVerifyOTP(ot.cfg.SERVICESID, code.Code, code.PhoneNumber)
+func (otU *otpUsecase) VerifyOTP(code models.VerifyData) (models.UserToken, error) {
+	helper.TwilioSetup(otU.cfg.ACCOUNTSID, otU.cfg.AUTHTOKEN)
+	if err := helper.TwilioVerifyOTP(otU.cfg.SERVICEID, code.Code, code.PhoneNumber); err != nil {
+		return models.UserToken{}, errors.New("error while verifying OTP")
+	}
+	// getting user details to generate user token after verify OTP
+	userDetails, err := otU.otpRepo.UserDetailsUsingPhone(code.PhoneNumber)
 	if err != nil {
-		//this guard clause catches the error code runs only until here
-		return models.TokenUsers{}, errors.New("error while verifying")
+		return models.UserToken{}, err
+	}
+	tokenString, err := helper.GenerateUserToken(userDetails)
+	if err != nil {
+		return models.UserToken{}, err
 	}
 
-	// if user is authenticated using OTP send back user details
-	userDetails, err := ot.otpRepository.UserDetailsUsingPhone(code.PhoneNumber)
+	var userResponse models.UserDetailsResponse
+	err = copier.Copy(&userResponse, &userDetails)
 	if err != nil {
-		return models.TokenUsers{}, err
+		return models.UserToken{}, err
 	}
-
-	tokenString, err := ot.helper.GenerateTokenClients(userDetails)
-	if err != nil {
-		return models.TokenUsers{}, err
-	}
-
-	var user models.UserDetailsResponse
-	err = copier.Copy(&user, &userDetails)
-	if err != nil {
-		return models.TokenUsers{}, err
-	}
-
-	return models.TokenUsers{
-		Users: user,
+	return models.UserToken{
+		User:  userResponse,
 		Token: tokenString,
 	}, nil
-
 }

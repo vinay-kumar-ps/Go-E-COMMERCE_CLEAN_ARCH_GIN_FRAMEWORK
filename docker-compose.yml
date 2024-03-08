@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: "animestore_user"
+      POSTGRES_PASSWORD: "password123"
+      POSTGRES_DB: "animestores"
+    networks:
+      - mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  animestore:
+    image: animestore:latest  # Specify the image name and tag here
+    restart: on-failure
+    environment:
+      DB_HOST: "postgres"
+      DB_USER: "animestore_user"
+      DB_PASSWORD: "password123"
+      DB_PORT: "5432"
+      DB_NAME: "animestores"
+    depends_on:
+      - postgres
+    networks:
+      - mydb
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+
+networks:
+  mydb:
+    driver: bridge

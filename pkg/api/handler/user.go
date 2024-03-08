@@ -237,7 +237,7 @@ func (uH *UserHandler) Login(c *gin.Context) {
 	}
 
 	successRes := response.ClientResponse(http.StatusOK, "user successfully logged in", userToken, nil)
-	// c.SetCookie("Authorization",userToken.Token,3600,"/","yoursstore.online",true,false)
+	// c.SetCookie("Authorization",userToken.Token,3600,"/","animestore.online",true,false)
 	c.SetCookie("Authorization", userToken.Token, 3600*24*30, "", "", false, true)
 
 	c.JSON(http.StatusOK, successRes)

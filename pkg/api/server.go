@@ -42,5 +42,5 @@ func NewServerHttp(categoryHandler *handler.CategoryHandler,
 }
 
 func (sh *ServerHTTP) Start() {
-	sh.engine.Run(":8082")
+	sh.engine.Run(":3000")
 }

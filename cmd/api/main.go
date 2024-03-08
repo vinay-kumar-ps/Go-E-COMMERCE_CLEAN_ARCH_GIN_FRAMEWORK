@@ -14,7 +14,7 @@ func main() {
 		log.Fatal("cannot load config", configErr)
 	}
 
-	docs.SwaggerInfo.Title = "YoursStore"
+	docs.SwaggerInfo.Title = "AnimeStore"
 	docs.SwaggerInfo.Description = "An Ecommerce Application"
 	docs.SwaggerInfo.Version = "1.0"
 	// docs.SwaggerInfo.Host = config.BASE_URL

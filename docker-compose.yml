@@ -10,7 +10,7 @@ services:
     networks:
       - mydb
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - /pgdata:var/lib/postgresql/data
 
   animestore:
     image: animestore:latest  # Specify the image name and tag here

@@ -1,4 +1,4 @@
-.PHONY:  run stop  wire build 
+.PHONY:  run stop  wire build swag 
 
 build: ${BINARY_DIR} ## Compile the code, build Executable File
     $(GOCMD) build -o $(BINARY_DIR) -v ./cmd/api
@@ -16,5 +16,3 @@ run :
 	docker compose up
 stop:
 	docker compose down
-wire :
-	cd pkg/di && wire
